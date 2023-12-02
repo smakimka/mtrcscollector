@@ -33,20 +33,20 @@ func (d *MetricsUpdateData) ParsePath(path string) (int, error) {
 	}
 	d.Name = rawParams[1]
 
-	var conv_err error
+	var convErr error
 	switch d.Kind {
 	case mtrcs.Counter:
 		val, err := strconv.ParseInt(rawParams[2], 10, 64)
-		conv_err = err
+		convErr = err
 		d.Value = float64(val)
 	case mtrcs.Gauge:
 		val, err := strconv.ParseFloat(rawParams[2], 64)
-		conv_err = err
+		convErr = err
 		d.Value = val
 	}
 
-	if conv_err != nil {
-		return http.StatusBadRequest, conv_err
+	if convErr != nil {
+		return http.StatusBadRequest, convErr
 	}
 
 	return 200, nil
