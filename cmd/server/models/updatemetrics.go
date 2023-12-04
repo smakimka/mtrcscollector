@@ -10,7 +10,7 @@ import (
 )
 
 type MetricsUpdateData struct {
-	Kind  int
+	Kind  string
 	Name  string
 	Value float64
 }
@@ -25,12 +25,7 @@ func (d *MetricsUpdateData) ParsePath(path string) (int, error) {
 		return http.StatusBadRequest, fmt.Errorf("expected metric type to be \"gauge\" or \"counter\", got \"%s\" instead", rawParams[0])
 	}
 
-	switch rawParams[0] {
-	case "gauge":
-		d.Kind = mtrcs.Gauge
-	case "counter":
-		d.Kind = mtrcs.Counter
-	}
+	d.Kind = rawParams[0]
 	d.Name = rawParams[1]
 
 	var convErr error

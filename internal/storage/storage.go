@@ -13,6 +13,6 @@ var (
 type Storage interface {
 	Init() error
 	UpdateMetric(m mtrcs.Metric) error
-	GetMetric(name string) (mtrcs.Metric, error)
+	GetMetric(kind string, name string) (mtrcs.Metric, error)
 	GetAllMetrics() ([]mtrcs.Metric, error)
 }

@@ -1,8 +1,8 @@
 package mtrcs
 
 const (
-	Gauge   = iota
-	Counter = iota
+	Gauge   = "gauge"
+	Counter = "counter"
 )
 
 type Metric interface {

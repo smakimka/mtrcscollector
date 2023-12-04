@@ -36,7 +36,7 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	wg.Add(2)
+	wg.Add(1)
 	go collectMetrics(&wg, s, logger)
 	go sendMetrics(&wg, s, client, logger)
 	wg.Wait()

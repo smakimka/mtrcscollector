@@ -33,18 +33,21 @@ func (s *MemStorage) Init() error {
 	return nil
 }
 
-func (s *MemStorage) GetMetric(name string) (mtrcs.Metric, error) {
+func (s *MemStorage) GetMetric(kind string, name string) (mtrcs.Metric, error) {
 	s.Mutex.RLock()
 	defer s.Mutex.RUnlock()
 
-	gaugeVal, ok := s.GaugeMetrics[name]
-	if ok {
-		return mtrcs.GaugeMetric{Name: name, Value: gaugeVal}, nil
-	}
-
-	counterVal, ok := s.CounterMetrics[name]
-	if ok {
-		return mtrcs.CounterMetric{Name: name, Value: counterVal}, nil
+	switch kind {
+	case mtrcs.Gauge:
+		gaugeVal, ok := s.GaugeMetrics[name]
+		if ok {
+			return mtrcs.GaugeMetric{Name: name, Value: gaugeVal}, nil
+		}
+	case mtrcs.Counter:
+		counterVal, ok := s.CounterMetrics[name]
+		if ok {
+			return mtrcs.CounterMetric{Name: name, Value: counterVal}, nil
+		}
 	}
 
 	return nil, ErrNoSuchMetric
