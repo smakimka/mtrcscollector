@@ -38,7 +38,7 @@ func (h MetricsUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	err = h.Storage.Update(m)
+	err = h.Storage.UpdateMetric(m)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))

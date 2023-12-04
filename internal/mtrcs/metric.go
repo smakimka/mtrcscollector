@@ -6,5 +6,8 @@ const (
 )
 
 type Metric interface {
-	GetType() int
+	GetType() string
+	GetValue() float64
+	GetName() string
+	GetStringValue() string
 }
