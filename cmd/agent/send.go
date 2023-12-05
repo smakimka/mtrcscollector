@@ -41,20 +41,21 @@ func sendMetric(wg *sync.WaitGroup, client *http.Client, m mtrcs.Metric, logger 
 	defer wg.Done()
 	logger.Printf("sending metric %s", m)
 
-	reqUrl := fmt.Sprintf("%s/update/%s/%s/%s", serverAddr, m.GetType(), m.GetName(), m.GetStringValue())
-	req, err := http.NewRequest("POST", reqUrl, nil)
+	reqURL := fmt.Sprintf("%s/update/%s/%s/%s", serverAddr, m.GetType(), m.GetName(), m.GetStringValue())
+	req, err := http.NewRequest("POST", reqURL, nil)
 	if err != nil {
 		logger.Printf("error creating request (%s)", err.Error())
 		return
 	}
 	req.Header.Add("Content-Type", "text/plain")
 
-	logger.Printf("sending update metric request (%s)", reqUrl)
+	logger.Printf("sending update metric request (%s)", reqURL)
 	resp, err := client.Do(req)
 	if err != nil {
 		logger.Printf("error sending request (%s)", err.Error())
 		return
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		logger.Printf("got not ok status (%d)", resp.StatusCode)

@@ -41,7 +41,11 @@ func TestContentTypeText(t *testing.T) {
 
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, requset)
-			assert.Equal(t, test.want, w.Result().StatusCode)
+
+			res := w.Result()
+			defer res.Body.Close()
+
+			assert.Equal(t, test.want, res.StatusCode)
 		})
 	}
 }

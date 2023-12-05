@@ -81,10 +81,13 @@ func TestMetricsUpdateHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
+
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, request)
 
 			res := w.Result()
+			defer res.Body.Close()
+
 			assert.Equal(t, test.want.code, res.StatusCode)
 			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
 		})
