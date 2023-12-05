@@ -16,6 +16,9 @@ type MetricsUpdateHandler struct {
 
 func (h MetricsUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var data models.MetricsUpdateData
+
+	w.Header().Add("Content-Type", "text/plain")
+
 	code, err := data.ParsePath(r.URL.Path)
 	if err != nil {
 		w.WriteHeader(code)

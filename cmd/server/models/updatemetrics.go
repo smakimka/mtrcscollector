@@ -44,5 +44,5 @@ func (d *MetricsUpdateData) ParsePath(path string) (int, error) {
 		return http.StatusBadRequest, convErr
 	}
 
-	return 200, nil
+	return http.StatusOK, nil
 }
