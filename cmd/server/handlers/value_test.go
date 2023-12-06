@@ -90,6 +90,7 @@ func TestGetMetricsHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp, body := testValueRequest(t, ts, "GET", test.url)
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.want.code, resp.StatusCode)
 			assert.Equal(t, test.want.body, body)

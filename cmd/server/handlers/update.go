@@ -42,7 +42,7 @@ func UpdateMetricHandler(w http.ResponseWriter, r *http.Request) {
 	s := r.Context().Value(middleware.StorageKey).(storage.Storage)
 	err := s.UpdateMetric(m)
 	if err != nil {
-		http.Error(w, convErr.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 

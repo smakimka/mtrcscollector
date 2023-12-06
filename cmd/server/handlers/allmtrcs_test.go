@@ -69,6 +69,7 @@ func TestAllMtrcsHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp := testAllMtrcsRequest(t, ts, "GET")
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.want.code, resp.StatusCode)
 			assert.Equal(t, test.want.contentType, resp.Header.Get("Content-Type"))

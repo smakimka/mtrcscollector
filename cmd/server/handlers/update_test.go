@@ -85,7 +85,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			name: "not existent metric type",
 			url:  "/update/not_existing/test/1",
 			want: want{
-				code:        http.StatusNotFound,
+				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
@@ -113,6 +113,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp := testUpdateRequest(t, ts, "POST", test.url)
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.want.code, resp.StatusCode)
 			assert.Equal(t, test.want.contentType, resp.Header.Get("Content-Type"))

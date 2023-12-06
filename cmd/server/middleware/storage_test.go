@@ -62,6 +62,7 @@ func TestStorage(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp := testStorageRequest(t, ts, "POST", test.url)
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.want, resp.StatusCode)
 		})

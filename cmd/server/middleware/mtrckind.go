@@ -11,7 +11,7 @@ func MetricKind(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		metricKind := chi.URLParam(r, "metricKind")
 		if metricKind != mtrcs.Gauge && metricKind != mtrcs.Counter {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusBadRequest)
 			w.Write([]byte("wrong metric type"))
 			return
 		}

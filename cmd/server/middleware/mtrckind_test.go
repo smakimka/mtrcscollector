@@ -51,7 +51,7 @@ func TestMetricKind(t *testing.T) {
 		{
 			name: "negative test #1",
 			url:  "/update/non-existent/test/1",
-			want: 404,
+			want: 400,
 		},
 	}
 
@@ -61,6 +61,7 @@ func TestMetricKind(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			resp := testMetricRequest(t, ts, "POST", test.url)
+			defer resp.Body.Close()
 
 			assert.Equal(t, test.want, resp.StatusCode)
 		})
