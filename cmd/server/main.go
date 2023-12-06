@@ -1,45 +1,19 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"net/http"
-	"os"
-
-	"github.com/go-chi/chi/v5"
-	chiMW "github.com/go-chi/chi/v5/middleware"
-	"github.com/smakimka/mtrcscollector/cmd/server/handlers"
-	mw "github.com/smakimka/mtrcscollector/cmd/server/middleware"
-	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func GetRouter() chi.Router {
-	logger := log.New(os.Stdout, "", 3)
+func main() {
+	parseFlags()
 
-	s := &storage.MemStorage{Logger: logger}
-	err := s.Init()
-	if err != nil {
-		log.Fatal(err)
+	if err := run(); err != nil {
+		panic(err)
 	}
-	storageMW := mw.WithMemStorage{S: s}
-
-	r := chi.NewRouter()
-	r.Use(chiMW.Logger)
-	r.Use(storageMW.WithMemStorage)
-
-	r.Get("/", handlers.GetAllMetrics)
-	r.Route("/update/{metricKind}", func(r chi.Router) {
-		r.Use(mw.MetricKind)
-		r.Post("/{metricName}/{metricValue}", handlers.UpdateMetricHandler)
-	})
-	r.Route("/value/{metricKind}", func(r chi.Router) {
-		r.Use(mw.MetricKind)
-		r.Get("/{metricName}", handlers.GetMetricValueHandler)
-	})
-
-	return r
 }
 
-func main() {
-
-	log.Fatal(http.ListenAndServe(`localhost:8080`, GetRouter()))
+func run() error {
+	fmt.Println("Running server on", flagRunAddr)
+	return http.ListenAndServe(flagRunAddr, GetRouter())
 }

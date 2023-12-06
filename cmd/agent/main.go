@@ -6,20 +6,14 @@ import (
 	"os"
 	"runtime"
 	"sync"
-	"time"
 
 	"github.com/smakimka/mtrcscollector/internal/mtrcs"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-var (
-	reportInterval             = 10 * time.Second
-	pollInteraval              = 2 * time.Second
-	concurrentMetricsSendCount = 10
-	serverAddr                 = "http://localhost:8080"
-)
-
 func main() {
+	parseFlags()
+
 	logger := log.New(os.Stdout, "", 5)
 
 	s := &storage.MemStorage{Logger: logger}
