@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"time"
 )
 
@@ -17,7 +16,6 @@ var (
 
 func parseFlags() {
 	flag.StringVar(&serverAddr, "a", "localhost:8080", "server addres without http://")
-	serverAddr = fmt.Sprintf("http://%s", serverAddr)
 
 	flag.IntVar(&flagReportInterval, "r", 10, "metrics sending period (in seconds)")
 	flag.IntVar(&flagPollInteraval, "p", 2, "metrics updqating period (in seconds)")

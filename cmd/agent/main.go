@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"runtime"
 	"sync"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/smakimka/mtrcscollector/internal/mtrcs"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
@@ -21,8 +22,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	client := &http.Client{}
+	client := resty.New()
+	client.SetBaseURL(fmt.Sprintf("http://%s", serverAddr))
 
 	// инициализация метрик
 	m := runtime.MemStats{}

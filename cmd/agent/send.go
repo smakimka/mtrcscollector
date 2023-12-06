@@ -7,11 +7,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/go-resty/resty/v2"
 	"github.com/smakimka/mtrcscollector/internal/mtrcs"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func sendMetrics(wg *sync.WaitGroup, s storage.Storage, client *http.Client, logger *log.Logger) {
+func sendMetrics(wg *sync.WaitGroup, s storage.Storage, client *resty.Client, logger *log.Logger) {
 	defer wg.Done()
 
 	for {
@@ -37,9 +38,8 @@ func sendMetrics(wg *sync.WaitGroup, s storage.Storage, client *http.Client, log
 	}
 }
 
-func sendMetric(wg *sync.WaitGroup, s storage.Storage, client *http.Client, m mtrcs.Metric, logger *log.Logger) {
+func sendMetric(wg *sync.WaitGroup, s storage.Storage, client *resty.Client, m mtrcs.Metric, logger *log.Logger) {
 	defer wg.Done()
-	logger.Printf("sending metric %s", m)
 
 	var reqURL string
 	switch m.GetName() {
@@ -59,8 +59,7 @@ func sendMetric(wg *sync.WaitGroup, s storage.Storage, client *http.Client, m mt
 		count, countOK := pollCount.(mtrcs.CounterMetric)
 		lastCount, lastCountOK := LastpollCount.(mtrcs.GaugeMetric)
 		if countOK && lastCountOK {
-			reqURL = fmt.Sprintf("%s/update/%s/%s/%s",
-				serverAddr,
+			reqURL = fmt.Sprintf("/update/%s/%s/%s",
 				m.GetType(),
 				m.GetName(),
 				fmt.Sprint(count.Value-int64(lastCount.Value)),
@@ -69,25 +68,19 @@ func sendMetric(wg *sync.WaitGroup, s storage.Storage, client *http.Client, m mt
 		}
 
 	default:
-		reqURL = fmt.Sprintf("%s/update/%s/%s/%s", serverAddr, m.GetType(), m.GetName(), m.GetStringValue())
+		reqURL = fmt.Sprintf("/update/%s/%s/%s", m.GetType(), m.GetName(), m.GetStringValue())
 	}
-
-	req, err := http.NewRequest("POST", reqURL, nil)
-	if err != nil {
-		logger.Printf("error creating request (%s)", err.Error())
-		return
-	}
-	req.Header.Add("Content-Type", "text/plain")
 
 	logger.Printf("sending update metric request (%s)", reqURL)
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.Printf("error sending request (%s)", err.Error())
-		return
-	}
-	defer resp.Body.Close()
+	resp, err := client.R().
+		SetHeader("Content-Type", "text/plain").
+		Post(reqURL)
 
-	if resp.StatusCode != http.StatusOK {
-		logger.Printf("got not ok status (%d)", resp.StatusCode)
+	if err != nil {
+		logger.Printf("error sending request %s", err.Error())
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		logger.Printf("got not ok status (%d)", resp.StatusCode())
 	}
 }
