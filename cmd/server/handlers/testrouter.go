@@ -1,18 +1,32 @@
-package main
+package handlers
 
 import (
 	"log"
 	"net/http"
+	"net/http/httptest"
 	"os"
+	"testing"
 
 	"github.com/go-chi/chi/v5"
 	chiMW "github.com/go-chi/chi/v5/middleware"
-	"github.com/smakimka/mtrcscollector/cmd/server/handlers"
 	mw "github.com/smakimka/mtrcscollector/cmd/server/middleware"
 	"github.com/smakimka/mtrcscollector/internal/storage"
+	"github.com/stretchr/testify/require"
 )
 
-func GetRouter() chi.Router {
+func testRequest(t *testing.T, ts *httptest.Server, method,
+	path string) *http.Response {
+	req, err := http.NewRequest(method, ts.URL+path, nil)
+	require.NoError(t, err)
+
+	resp, err := ts.Client().Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	return resp
+}
+
+func GetTestRouter() chi.Router {
 	logger := log.New(os.Stdout, "", 3)
 
 	s := &storage.MemStorage{Logger: logger}
@@ -28,13 +42,8 @@ func GetRouter() chi.Router {
 
 	r.Route("/update/{metricKind}", func(r chi.Router) {
 		r.Use(mw.MetricKind)
-		r.Post("/{metricName}/{metricValue}", handlers.UpdateMetricHandler)
+		r.Post("/{metricName}/{metricValue}", UpdateMetricHandler)
 	})
 
 	return r
-}
-
-func main() {
-
-	log.Fatal(http.ListenAndServe(`localhost:8080`, GetRouter()))
 }

@@ -11,7 +11,7 @@ func (m GaugeMetric) GetType() string {
 	return "gauge"
 }
 
-func (m GaugeMetric) GetValue() float64 {
+func (m GaugeMetric) GetValue() interface{} {
 	return m.Value
 }
 

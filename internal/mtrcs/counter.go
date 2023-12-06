@@ -11,8 +11,8 @@ func (m CounterMetric) GetType() string {
 	return "counter"
 }
 
-func (m CounterMetric) GetValue() float64 {
-	return float64(m.Value)
+func (m CounterMetric) GetValue() interface{} {
+	return m.Value
 }
 
 func (m CounterMetric) GetName() string {

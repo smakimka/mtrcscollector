@@ -53,7 +53,7 @@ func TestUpdateMetrics(t *testing.T) {
 
 			pollCount, err := s.GetMetric("counter", "PollCount")
 			require.NoError(t, err)
-			assert.Equal(t, int64(test.wantPollCountValue), int64(pollCount.GetValue()))
+			assert.Equal(t, int64(test.wantPollCountValue), pollCount.GetValue())
 		})
 	}
 }

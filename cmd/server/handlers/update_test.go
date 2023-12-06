@@ -1,15 +1,12 @@
 package handlers
 
 import (
-	"log"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
-	"github.com/smakimka/mtrcscollector/internal/storage"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestMetricsUpdateHandler(t *testing.T) {
@@ -27,7 +24,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			url:  "/update/gauge/test/1.0",
 			want: want{
 				code:        http.StatusOK,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -35,7 +32,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			url:  "/update/counter/test/1",
 			want: want{
 				code:        http.StatusOK,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -43,15 +40,15 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			url:  "/update/counter/test/1.5",
 			want: want{
 				code:        http.StatusBadRequest,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
 			name: "not existent metric type",
 			url:  "/update/not_existing/test/1",
 			want: want{
-				code:        http.StatusBadRequest,
-				contentType: "text/plain",
+				code:        http.StatusNotFound,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -59,7 +56,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			url:  "/update/gauge/test",
 			want: want{
 				code:        http.StatusNotFound,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -67,29 +64,21 @@ func TestMetricsUpdateHandler(t *testing.T) {
 			url:  "/update/counter",
 			want: want{
 				code:        http.StatusNotFound,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
-	s := &storage.MemStorage{Logger: logger}
-	err := s.Init()
-	require.NoError(t, err, "error initializing memstorage")
-	handler := http.StripPrefix("/update/", MetricsUpdateHandler{Logger: logger, Storage: s})
+	ts := httptest.NewServer(GetTestRouter())
+	defer ts.Close()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, test.url, nil)
+			resp := testRequest(t, ts, "POST", test.url)
 
-			w := httptest.NewRecorder()
-			handler.ServeHTTP(w, request)
-
-			res := w.Result()
-			defer res.Body.Close()
-
-			assert.Equal(t, test.want.code, res.StatusCode)
-			assert.Equal(t, test.want.contentType, res.Header.Get("Content-Type"))
+			fmt.Println(resp.Header.Get("Content-Type"))
+			assert.Equal(t, test.want.code, resp.StatusCode)
+			assert.Equal(t, test.want.contentType, resp.Header.Get("Content-Type"))
 		})
 	}
 }

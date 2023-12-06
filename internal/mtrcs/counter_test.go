@@ -35,3 +35,23 @@ func TestCounterGetStringValue(t *testing.T) {
 		})
 	}
 }
+
+func TestGetCounterValue(t *testing.T) {
+	tests := []struct {
+		name   string
+		metric CounterMetric
+		want   int64
+	}{
+		{
+			name:   "data type is int",
+			metric: CounterMetric{Name: "test", Value: 1},
+			want:   1,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			assert.Equal(t, test.want, test.metric.GetValue())
+		})
+	}
+}

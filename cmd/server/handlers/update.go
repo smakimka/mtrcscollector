@@ -1,53 +1,50 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
+	"strconv"
 
-	"github.com/smakimka/mtrcscollector/cmd/server/models"
+	"github.com/go-chi/chi/v5"
+	"github.com/smakimka/mtrcscollector/cmd/server/middleware"
 	"github.com/smakimka/mtrcscollector/internal/mtrcs"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-type MetricsUpdateHandler struct {
-	Logger  *log.Logger
-	Storage storage.Storage
-}
-
-func (h MetricsUpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var data models.MetricsUpdateData
-
-	w.Header().Add("Content-Type", "text/plain")
-
-	code, err := data.ParsePath(r.URL.Path)
-	if err != nil {
-		w.WriteHeader(code)
-		w.Write([]byte(err.Error()))
-		h.Logger.Printf("%s    %d", r.RequestURI, code)
-		return
-	}
+func UpdateMetricHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
 
 	var m mtrcs.Metric
-	switch data.Kind {
+	var convErr error
+	metricKind := chi.URLParam(r, "metricKind")
+
+	switch metricKind {
 	case mtrcs.Gauge:
+		value, err := strconv.ParseFloat(chi.URLParam(r, "metricValue"), 64)
+		convErr = err
 		m = mtrcs.GaugeMetric{
-			Name:  data.Name,
-			Value: data.Value,
+			Name:  chi.URLParam(r, "metricName"),
+			Value: value,
 		}
 	case mtrcs.Counter:
+		value, err := strconv.ParseInt(chi.URLParam(r, "metricValue"), 10, 64)
+		convErr = err
 		m = mtrcs.CounterMetric{
-			Name:  data.Name,
-			Value: int64(data.Value),
+			Name:  chi.URLParam(r, "metricName"),
+			Value: value,
 		}
 	}
 
-	err = h.Storage.UpdateMetric(m)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		h.Logger.Printf("%s    %d", r.RequestURI, http.StatusInternalServerError)
+	if convErr != nil {
+		http.Error(w, convErr.Error(), http.StatusBadRequest)
 		return
 	}
 
-	h.Logger.Printf("%s    %d", r.RequestURI, http.StatusOK)
+	s := r.Context().Value(middleware.StorageKey).(storage.Storage)
+	err := s.UpdateMetric(m)
+	if err != nil {
+		http.Error(w, convErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

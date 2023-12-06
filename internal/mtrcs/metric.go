@@ -7,7 +7,7 @@ const (
 
 type Metric interface {
 	GetType() string
-	GetValue() float64
+	GetValue() interface{}
 	GetName() string
 	GetStringValue() string
 }
