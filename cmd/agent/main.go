@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/smakimka/mtrcscollector/internal/mtrcs"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
@@ -33,6 +34,7 @@ func main() {
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
 	updateMetrics(&m, s, logger)
+	s.UpdateMetric(mtrcs.GaugeMetric{Name: "LastPollCount", Value: 0})
 
 	var wg sync.WaitGroup
 

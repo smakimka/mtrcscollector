@@ -26,6 +26,7 @@ func GetRouter() chi.Router {
 	r.Use(chiMW.Logger)
 	r.Use(storageMW.WithMemStorage)
 
+	r.Get("/", handlers.GetAllMetrics)
 	r.Route("/update/{metricKind}", func(r chi.Router) {
 		r.Use(mw.MetricKind)
 		r.Post("/{metricName}/{metricValue}", handlers.UpdateMetricHandler)
