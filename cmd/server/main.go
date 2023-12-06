@@ -30,6 +30,10 @@ func GetRouter() chi.Router {
 		r.Use(mw.MetricKind)
 		r.Post("/{metricName}/{metricValue}", handlers.UpdateMetricHandler)
 	})
+	r.Route("/value/{metricKind}", func(r chi.Router) {
+		r.Use(mw.MetricKind)
+		r.Get("/{metricName}", handlers.GetMetricValueHandler)
+	})
 
 	return r
 }
