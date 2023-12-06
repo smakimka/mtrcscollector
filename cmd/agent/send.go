@@ -12,7 +12,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func sendMetrics(wg *sync.WaitGroup, s storage.Storage, client *resty.Client, logger *log.Logger) {
+func sendMetrics(cfg *Config, wg *sync.WaitGroup, s storage.Storage, client *resty.Client, logger *log.Logger) {
 	defer wg.Done()
 
 	for {
@@ -27,14 +27,14 @@ func sendMetrics(wg *sync.WaitGroup, s storage.Storage, client *resty.Client, lo
 			sendWg.Add(1)
 			go sendMetric(&sendWg, s, client, metric, logger)
 			count++
-			if count == concurrentMetricsSendCount {
+			if count == cfg.concurrentMetricsSendCount {
 				sendWg.Wait()
 				count = 0
 			}
 		}
 		sendWg.Wait()
 
-		time.Sleep(reportInterval)
+		time.Sleep(cfg.reportInterval)
 	}
 }
 

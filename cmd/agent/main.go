@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	parseFlags()
+	cfg := parseFlags()
 
 	logger := log.New(os.Stdout, "", 5)
 
@@ -23,7 +23,7 @@ func main() {
 		log.Fatal(err)
 	}
 	client := resty.New()
-	client.SetBaseURL(fmt.Sprintf("http://%s", serverAddr))
+	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
 
 	// инициализация метрик
 	m := runtime.MemStats{}
@@ -34,7 +34,7 @@ func main() {
 	var wg sync.WaitGroup
 
 	wg.Add(1)
-	go collectMetrics(&wg, s, logger)
-	go sendMetrics(&wg, s, client, logger)
+	go collectMetrics(cfg, &wg, s, logger)
+	go sendMetrics(cfg, &wg, s, client, logger)
 	wg.Wait()
 }

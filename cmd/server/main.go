@@ -6,14 +6,14 @@ import (
 )
 
 func main() {
-	parseFlags()
+	cfg := parseFlags()
 
-	if err := run(); err != nil {
+	if err := run(cfg); err != nil {
 		panic(err)
 	}
 }
 
-func run() error {
-	fmt.Println("Running server on", flagRunAddr)
-	return http.ListenAndServe(flagRunAddr, GetRouter())
+func run(cfg *Config) error {
+	fmt.Println("Running server on", cfg.Addr)
+	return http.ListenAndServe(cfg.Addr, GetRouter())
 }

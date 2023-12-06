@@ -11,7 +11,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func collectMetrics(wg *sync.WaitGroup, s storage.Storage, logger *log.Logger) {
+func collectMetrics(cfg *Config, wg *sync.WaitGroup, s storage.Storage, logger *log.Logger) {
 	defer wg.Done()
 
 	for {
@@ -20,7 +20,7 @@ func collectMetrics(wg *sync.WaitGroup, s storage.Storage, logger *log.Logger) {
 
 		updateMetrics(&m, s, logger)
 
-		time.Sleep(pollInteraval)
+		time.Sleep(cfg.pollInterval)
 	}
 }
 
