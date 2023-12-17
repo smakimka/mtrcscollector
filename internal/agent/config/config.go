@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -8,12 +8,19 @@ import (
 )
 
 type Config struct {
-	Addr                       string `env:"ADDRESS"`
-	ReportIntervalVal          int    `env:"REPORT_INTERVAL"`
-	PollIntervalVal            int    `env:"POLL_INTERVAL"`
-	reportInterval             time.Duration
-	pollInterval               time.Duration
-	concurrentMetricsSendCount int
+	Addr           string
+	ReportInterval time.Duration
+	PollInterval   time.Duration
+}
+
+type EnvParams struct {
+	addr           string `env:"ADDRESS"`
+	reportInterval int    `env:"REPORT_INTERVAL"`
+	pollInterval   int    `env:"POLL_INTERVAL"`
+}
+
+func NewConfig() *Config {
+	return parseFlags()
 }
 
 func parseFlags() *Config {
@@ -31,28 +38,27 @@ func parseFlags() *Config {
 	flag.Parse()
 
 	cfg := &Config{}
-	err := env.Parse(cfg)
+	envParams := &EnvParams{}
+	err := env.Parse(envParams)
 	if err != nil {
 		panic(err)
 	}
 
-	if cfg.Addr == "" {
+	if envParams.addr == "" {
 		cfg.Addr = serverAddr
 	}
 
-	if cfg.PollIntervalVal == 0 {
-		cfg.pollInterval = pollInteraval
+	if envParams.pollInterval == 0 {
+		cfg.PollInterval = pollInteraval
 	} else {
-		cfg.pollInterval = time.Duration(cfg.PollIntervalVal) * time.Second
+		cfg.PollInterval = time.Duration(envParams.pollInterval) * time.Second
 	}
 
-	if cfg.ReportIntervalVal == 0 {
-		cfg.reportInterval = reportInterval
+	if envParams.reportInterval == 0 {
+		cfg.ReportInterval = reportInterval
 	} else {
-		cfg.reportInterval = time.Duration(cfg.ReportIntervalVal) * time.Second
+		cfg.ReportInterval = time.Duration(envParams.reportInterval) * time.Second
 	}
-
-	cfg.concurrentMetricsSendCount = 10
 
 	return cfg
 }

@@ -4,91 +4,100 @@ import (
 	"log"
 	"sync"
 
-	"github.com/smakimka/mtrcscollector/internal/mtrcs"
+	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
 type MemStorage struct {
-	Logger         *log.Logger
-	Mutex          sync.RWMutex
-	GaugeMetrics   map[string]float64
-	CounterMetrics map[string]int64
+	logger         *log.Logger
+	mutex          sync.RWMutex
+	gaugeMetrics   map[string]float64
+	counterMetrics map[string]int64
 }
 
-func (s *MemStorage) UpdateMetric(m mtrcs.Metric) error {
-	var err error
-	switch metric := m.(type) {
-	case mtrcs.GaugeMetric:
-		err = s.updateGaugeMetric(metric)
-	case mtrcs.CounterMetric:
-		err = s.updateCounterMetric(metric)
+func NewMemStorage() *MemStorage {
+	s := &MemStorage{
+		mutex:          sync.RWMutex{},
+		logger:         &log.Logger{},
+		gaugeMetrics:   make(map[string]float64),
+		counterMetrics: make(map[string]int64),
+	}
+	return s
+}
+
+func (s *MemStorage) WithLogger(l *log.Logger) *MemStorage {
+	s.logger = l
+	return s
+}
+
+func (s *MemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	gaugeVal, ok := s.gaugeMetrics[name]
+	if ok {
+		return model.GaugeMetric{Name: name, Value: gaugeVal}, nil
 	}
 
-	return err
+	return model.GaugeMetric{}, ErrNoSuchMetric
 }
 
-func (s *MemStorage) Init() error {
-	s.Mutex = sync.RWMutex{}
-	s.GaugeMetrics = make(map[string]float64)
-	s.CounterMetrics = make(map[string]int64)
-	return nil
-}
+func (s *MemStorage) GetCounterMetric(name string) (model.CounterMetric, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-func (s *MemStorage) GetMetric(kind string, name string) (mtrcs.Metric, error) {
-	s.Mutex.RLock()
-	defer s.Mutex.RUnlock()
-
-	switch kind {
-	case mtrcs.Gauge:
-		gaugeVal, ok := s.GaugeMetrics[name]
-		if ok {
-			return mtrcs.GaugeMetric{Name: name, Value: gaugeVal}, nil
-		}
-	case mtrcs.Counter:
-		counterVal, ok := s.CounterMetrics[name]
-		if ok {
-			return mtrcs.CounterMetric{Name: name, Value: counterVal}, nil
-		}
+	counterVal, ok := s.counterMetrics[name]
+	if ok {
+		return model.CounterMetric{Name: name, Value: counterVal}, nil
 	}
 
-	return nil, ErrNoSuchMetric
+	return model.CounterMetric{}, ErrNoSuchMetric
 }
 
-func (s *MemStorage) GetAllMetrics() ([]mtrcs.Metric, error) {
-	s.Mutex.RLock()
-	defer s.Mutex.RUnlock()
+func (s *MemStorage) GetAllGaugeMetrics() ([]model.GaugeMetric, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	metrics := make([]mtrcs.Metric, len(s.CounterMetrics)+len(s.GaugeMetrics))
+	metrics := make([]model.GaugeMetric, len(s.gaugeMetrics))
 	idx := 0
 
-	for name, value := range s.GaugeMetrics {
-		metrics[idx] = mtrcs.GaugeMetric{Name: name, Value: value}
-		idx++
-	}
-
-	for name, value := range s.CounterMetrics {
-		metrics[idx] = mtrcs.CounterMetric{Name: name, Value: value}
+	for name, value := range s.gaugeMetrics {
+		metrics[idx] = model.GaugeMetric{Name: name, Value: value}
 		idx++
 	}
 
 	return metrics, nil
 }
 
-func (s *MemStorage) updateGaugeMetric(m mtrcs.GaugeMetric) error {
-	s.Mutex.Lock()
-	defer s.Mutex.Unlock()
+func (s *MemStorage) GetAllCounterMetrics() ([]model.CounterMetric, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	s.GaugeMetrics[m.Name] = m.Value
-	s.Logger.Printf("updated gauge metric \"%s\" to %f", m.Name, m.Value)
+	metrics := make([]model.CounterMetric, len(s.counterMetrics))
+	idx := 0
+
+	for name, value := range s.counterMetrics {
+		metrics[idx] = model.CounterMetric{Name: name, Value: value}
+		idx++
+	}
+
+	return metrics, nil
+}
+
+func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	s.gaugeMetrics[m.Name] = m.Value
+	s.logger.Printf("updated gauge metric \"%s\" to %f", m.Name, m.Value)
 
 	return nil
 }
 
-func (s *MemStorage) updateCounterMetric(m mtrcs.CounterMetric) error {
-	s.Mutex.Lock()
-	defer s.Mutex.Unlock()
+func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
-	s.CounterMetrics[m.Name] += m.Value
-	s.Logger.Printf("updated counter metric \"%s\" to %d", m.Name, s.CounterMetrics[m.Name])
-
+	s.counterMetrics[m.Name] += m.Value
+	s.logger.Printf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name])
 	return nil
 }

@@ -8,10 +8,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	mw "github.com/smakimka/mtrcscollector/cmd/server/middleware"
-	"github.com/smakimka/mtrcscollector/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	mw "github.com/smakimka/mtrcscollector/internal/server/middleware"
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func testUpdateRequest(t *testing.T, ts *httptest.Server, method,
@@ -27,21 +28,18 @@ func testUpdateRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func getTestUpdateRouter() chi.Router {
-	logger := log.New(os.Stdout, "", 3)
+	l := log.New(os.Stdout, "", 3)
 
-	s := &storage.MemStorage{Logger: logger}
-	err := s.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	storageMW := mw.WithMemStorage{S: s}
+	s := storage.NewMemStorage().
+		WithLogger(l)
+
+	updateMetricHandler := UpdateMetricHandler{s, l}
 
 	r := chi.NewRouter()
-	r.Use(storageMW.WithMemStorage)
 
 	r.Route("/update/{metricKind}", func(r chi.Router) {
 		r.Use(mw.MetricKind)
-		r.Post("/{metricName}/{metricValue}", UpdateMetricHandler)
+		r.Post("/{metricName}/{metricValue}", updateMetricHandler.ServeHTTP)
 	})
 
 	return r

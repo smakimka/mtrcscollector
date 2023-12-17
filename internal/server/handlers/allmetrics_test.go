@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	mw "github.com/smakimka/mtrcscollector/cmd/server/middleware"
-	"github.com/smakimka/mtrcscollector/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func testAllMtrcsRequest(t *testing.T, ts *httptest.Server, method string) *http.Response {
@@ -26,21 +26,14 @@ func testAllMtrcsRequest(t *testing.T, ts *httptest.Server, method string) *http
 }
 
 func getTestAllMtrcsRouter() chi.Router {
-	logger := log.New(os.Stdout, "", 3)
+	l := log.New(os.Stdout, "", 3)
 
-	s := &storage.MemStorage{Logger: logger}
-	err := s.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	storageMW := mw.WithMemStorage{S: s}
+	s := storage.NewMemStorage().
+		WithLogger(l)
 
+	getAllMetricsHandler := GetAllMetricsHandler{s, l}
 	r := chi.NewRouter()
-	r.Use(storageMW.WithMemStorage)
-
-	r.Use(storageMW.WithMemStorage)
-
-	r.Get("/", GetAllMetrics)
+	r.Get("/", getAllMetricsHandler.ServeHTTP)
 
 	return r
 }

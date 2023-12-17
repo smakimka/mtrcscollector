@@ -1,4 +1,4 @@
-package mtrcs
+package model
 
 import "fmt"
 

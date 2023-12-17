@@ -9,11 +9,12 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	mw "github.com/smakimka/mtrcscollector/cmd/server/middleware"
-	"github.com/smakimka/mtrcscollector/internal/mtrcs"
-	"github.com/smakimka/mtrcscollector/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smakimka/mtrcscollector/internal/model"
+	mw "github.com/smakimka/mtrcscollector/internal/server/middleware"
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func testValueRequest(t *testing.T, ts *httptest.Server, method,
@@ -32,22 +33,20 @@ func testValueRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func getTestValueRouter() chi.Router {
-	logger := log.New(os.Stdout, "", 3)
+	l := log.New(os.Stdout, "", 3)
 
-	s := &storage.MemStorage{Logger: logger}
-	err := s.Init()
-	if err != nil {
-		log.Fatal(err)
-	}
-	s.UpdateMetric(mtrcs.GaugeMetric{Name: "test", Value: 1.5})
-	storageMW := mw.WithMemStorage{S: s}
+	s := storage.NewMemStorage().
+		WithLogger(l)
+
+	s.UpdateGaugeMetric(model.GaugeMetric{Name: "test", Value: 1.5})
+
+	getMetricValueHandler := GetMetricValueHandler{s, l}
 
 	r := chi.NewRouter()
-	r.Use(storageMW.WithMemStorage)
 
 	r.Route("/value/{metricKind}", func(r chi.Router) {
 		r.Use(mw.MetricKind)
-		r.Get("/{metricName}", GetMetricValueHandler)
+		r.Get("/{metricName}", getMetricValueHandler.ServeHTTP)
 	})
 
 	return r
@@ -79,7 +78,7 @@ func TestGetMetricsHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusNotFound,
 				contentType: "text/plain; charset=utf-8",
-				body:        "no such metric\n",
+				body:        "no such metric",
 			},
 		},
 	}

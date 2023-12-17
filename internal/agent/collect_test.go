@@ -1,4 +1,4 @@
-package main
+package agent
 
 import (
 	"log"
@@ -6,9 +6,10 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/smakimka/mtrcscollector/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func TestUpdateMetrics(t *testing.T) {
@@ -27,7 +28,7 @@ func TestUpdateMetrics(t *testing.T) {
 			wantPollCountValue: 1,
 		},
 		{
-			name:               "double updarte",
+			name:               "double update",
 			callTimes:          2,
 			wantGaugeLength:    26,
 			wantCounterLength:  1,
@@ -35,23 +36,26 @@ func TestUpdateMetrics(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
-	s := &storage.MemStorage{Logger: logger}
+	l := log.New(os.Stdout, "", 5)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			err := s.Init()
-			require.NoError(t, err, "Error initializing memstorage")
+			s := storage.NewMemStorage().WithLogger(l)
+
 			for i := 0; i < test.callTimes; i++ {
 				m := runtime.MemStats{}
 				runtime.ReadMemStats(&m)
-				updateMetrics(&m, s, logger)
+				UpdateMetrics(&m, s, l)
 
-				assert.Equal(t, test.wantGaugeLength, len(s.GaugeMetrics))
-				assert.Equal(t, test.wantCounterLength, len(s.CounterMetrics))
+				gaugeMetrics, err := s.GetAllGaugeMetrics()
+				assert.NoError(t, err)
+				counterMetrics, err := s.GetAllCounterMetrics()
+				assert.NoError(t, err)
+				assert.Equal(t, test.wantGaugeLength, len(gaugeMetrics))
+				assert.Equal(t, test.wantCounterLength, len(counterMetrics))
 			}
 
-			pollCount, err := s.GetMetric("counter", "PollCount")
+			pollCount, err := s.GetCounterMetric("PollCount")
 			require.NoError(t, err)
 			assert.Equal(t, int64(test.wantPollCountValue), pollCount.GetValue())
 		})

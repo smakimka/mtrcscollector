@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"flag"
@@ -8,6 +8,10 @@ import (
 
 type Config struct {
 	Addr string `env:"ADDRESS"`
+}
+
+func NewConfig() *Config {
+	return parseFlags()
 }
 
 func parseFlags() *Config {

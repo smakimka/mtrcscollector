@@ -1,4 +1,4 @@
-package mtrcs
+package model
 
 import (
 	"testing"
@@ -6,25 +6,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCounterGetStringValue(t *testing.T) {
+func TestGaugeGetStringValue(t *testing.T) {
 	tests := []struct {
 		name   string
-		metric CounterMetric
+		metric GaugeMetric
 		want   string
 	}{
 		{
 			name:   "pozitive number",
-			metric: CounterMetric{Name: "", Value: 1},
-			want:   "1",
+			metric: GaugeMetric{Name: "", Value: 1.5},
+			want:   "1.5",
 		},
 		{
 			name:   "negative number",
-			metric: CounterMetric{Name: "", Value: -1},
-			want:   "-1",
+			metric: GaugeMetric{Name: "", Value: -1.5},
+			want:   "-1.5",
 		},
 		{
 			name:   "negative zero",
-			metric: CounterMetric{Name: "", Value: -0},
+			metric: GaugeMetric{Name: "", Value: -0},
 			want:   "0",
 		},
 	}
@@ -36,16 +36,16 @@ func TestCounterGetStringValue(t *testing.T) {
 	}
 }
 
-func TestGetCounterValue(t *testing.T) {
+func TestGetGaugeValue(t *testing.T) {
 	tests := []struct {
 		name   string
-		metric CounterMetric
-		want   int64
+		metric GaugeMetric
+		want   float64
 	}{
 		{
-			name:   "data type is int",
-			metric: CounterMetric{Name: "test", Value: 1},
-			want:   1,
+			name:   "data type is float64",
+			metric: GaugeMetric{Name: "test", Value: 1.5},
+			want:   1.5,
 		},
 	}
 

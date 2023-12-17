@@ -2,31 +2,71 @@ package handlers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
 	"github.com/go-chi/render"
-	"github.com/smakimka/mtrcscollector/cmd/server/middleware"
+
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func GetAllMetrics(w http.ResponseWriter, r *http.Request) {
-	s := r.Context().Value(middleware.StorageKey).(storage.Storage)
-	metrics, err := s.GetAllMetrics()
+type GetAllMetricsHandler struct {
+	s storage.Storage
+	l *log.Logger
+}
+
+func NewGetAllMetricsHandler() GetAllMetricsHandler {
+	return GetAllMetricsHandler{}
+}
+
+func (h GetAllMetricsHandler) WithLogger(l *log.Logger) GetAllMetricsHandler {
+	h.l = l
+	return h
+}
+
+func (h GetAllMetricsHandler) WithStorage(s storage.Storage) GetAllMetricsHandler {
+	h.s = s
+	return h
+}
+
+func (h GetAllMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	gaugeMetrics, err := h.s.GetAllGaugeMetrics()
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.PlainText(w, r, err.Error())
+		return
 	}
 
-	mtrcsList := make([]string, len(metrics))
-	for i, mtrc := range metrics {
-		mtrcsList[i] = fmt.Sprintf(`
+	gaugeMetricsList := make([]string, len(gaugeMetrics))
+	for i, mtrc := range gaugeMetrics {
+		gaugeMetricsList[i] = fmt.Sprintf(`
 		<tr>
 			<th scope="row">%d</th>
 			<td>%s</td>
 			<td>%s</td>
 			<td>%s</td>
 		</tr>`, i+1, mtrc.GetType(), mtrc.GetName(), mtrc.GetStringValue())
+	}
+
+	numHeadStart := len(gaugeMetrics)
+
+	counterMetrics, err := h.s.GetAllCounterMetrics()
+	if err != nil {
+		render.Status(r, http.StatusInternalServerError)
+		render.PlainText(w, r, err.Error())
+		return
+	}
+
+	counterMetricsList := make([]string, len(counterMetrics))
+	for i, mtrc := range counterMetrics {
+		counterMetricsList[i] = fmt.Sprintf(`
+		<tr>
+			<th scope="row">%d</th>
+			<td>%s</td>
+			<td>%s</td>
+			<td>%s</td>
+		</tr>`, numHeadStart+i+1, mtrc.GetType(), mtrc.GetName(), mtrc.GetStringValue())
 	}
 
 	html := fmt.Sprintf(`
@@ -58,6 +98,7 @@ func GetAllMetrics(w http.ResponseWriter, r *http.Request) {
 					</thead>
 					<tbody>
 						%s
+						%s
 					</tbody>
 				</table>  
 			</div>
@@ -65,7 +106,7 @@ func GetAllMetrics(w http.ResponseWriter, r *http.Request) {
 		<script src="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha2/js/bootstrap.min.js"></script>
 	</body>
 	</html>
-	`, strings.Join(mtrcsList, "\n"))
+	`, strings.Join(gaugeMetricsList, "\n"), strings.Join(counterMetricsList, "\n"))
 
 	render.Status(r, http.StatusOK)
 	render.HTML(w, r, html)

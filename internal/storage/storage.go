@@ -3,7 +3,7 @@ package storage
 import (
 	"errors"
 
-	"github.com/smakimka/mtrcscollector/internal/mtrcs"
+	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
 var (
@@ -11,8 +11,12 @@ var (
 )
 
 type Storage interface {
-	Init() error
-	UpdateMetric(m mtrcs.Metric) error
-	GetMetric(kind string, name string) (mtrcs.Metric, error)
-	GetAllMetrics() ([]mtrcs.Metric, error)
+	UpdateCounterMetric(m model.CounterMetric) error
+	UpdateGaugeMetric(m model.GaugeMetric) error
+
+	GetGaugeMetric(name string) (model.GaugeMetric, error)
+	GetCounterMetric(name string) (model.CounterMetric, error)
+
+	GetAllGaugeMetrics() ([]model.GaugeMetric, error)
+	GetAllCounterMetrics() ([]model.CounterMetric, error)
 }
