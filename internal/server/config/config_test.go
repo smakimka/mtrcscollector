@@ -14,5 +14,5 @@ func TestServerConfig(t *testing.T) {
 	}
 
 	cfg := NewConfig()
-	assert.Equal(t, cfg.Addr, defaultValues.addr)
+	assert.Equal(t, defaultValues.addr, cfg.Addr)
 }

@@ -19,7 +19,7 @@ func TestAgentConfig(t *testing.T) {
 	}
 
 	cfg := NewConfig()
-	assert.Equal(t, cfg.Addr, defaultValues.addr)
-	assert.Equal(t, cfg.ReportInterval, defaultValues.reportInterval)
-	assert.Equal(t, cfg.PollInterval, defaultValues.pollInterval)
+	assert.Equal(t, defaultValues.addr, cfg.Addr)
+	assert.Equal(t, defaultValues.reportInterval, cfg.ReportInterval)
+	assert.Equal(t, defaultValues.pollInterval, cfg.PollInterval)
 }

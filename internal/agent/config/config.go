@@ -14,9 +14,9 @@ type Config struct {
 }
 
 type EnvParams struct {
-	addr           string `env:"ADDRESS"`
-	reportInterval int    `env:"REPORT_INTERVAL"`
-	pollInterval   int    `env:"POLL_INTERVAL"`
+	Addr           string `env:"ADDRESS"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
 }
 
 func NewConfig() *Config {
@@ -44,20 +44,22 @@ func parseFlags() *Config {
 		panic(err)
 	}
 
-	if envParams.addr == "" {
+	if envParams.Addr == "" {
 		cfg.Addr = serverAddr
+	} else {
+		cfg.Addr = envParams.Addr
 	}
 
-	if envParams.pollInterval == 0 {
+	if envParams.PollInterval == 0 {
 		cfg.PollInterval = pollInteraval
 	} else {
-		cfg.PollInterval = time.Duration(envParams.pollInterval) * time.Second
+		cfg.PollInterval = time.Duration(envParams.PollInterval) * time.Second
 	}
 
-	if envParams.reportInterval == 0 {
+	if envParams.ReportInterval == 0 {
 		cfg.ReportInterval = reportInterval
 	} else {
-		cfg.ReportInterval = time.Duration(envParams.reportInterval) * time.Second
+		cfg.ReportInterval = time.Duration(envParams.ReportInterval) * time.Second
 	}
 
 	return cfg
