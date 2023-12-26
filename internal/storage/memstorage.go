@@ -87,11 +87,11 @@ func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
 	return nil
 }
 
-func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) error {
+func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.counterMetrics[m.Name] += m.Value
 	logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name]))
-	return nil
+	return s.counterMetrics[m.Name], nil
 }

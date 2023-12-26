@@ -56,3 +56,57 @@ func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 
 }
+
+type ValueHandler struct {
+	s storage.Storage
+}
+
+func NewValueHandler(s storage.Storage) ValueHandler {
+	return ValueHandler{s: s}
+}
+
+func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	data := &model.MetricsData{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+		return
+	}
+
+	switch data.Kind {
+	case model.Gauge:
+		m, err := h.s.GetGaugeMetric(data.Name)
+		if err != nil {
+			if err == storage.ErrNoSuchMetric {
+				render.Status(r, http.StatusNotFound)
+				render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+				return
+			}
+
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+
+		data.Value = &m.Value
+	case model.Counter:
+		m, err := h.s.GetCounterMetric(data.Name)
+		if err != nil {
+			if err == storage.ErrNoSuchMetric {
+				render.Status(r, http.StatusNotFound)
+				render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+				return
+			}
+
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+
+		floatValue := float64(m.Value)
+		data.Value = &floatValue
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, data)
+}
