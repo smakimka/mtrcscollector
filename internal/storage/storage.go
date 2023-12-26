@@ -11,7 +11,7 @@ var (
 )
 
 type Storage interface {
-	UpdateCounterMetric(m model.CounterMetric) error
+	UpdateCounterMetric(m model.CounterMetric) (int64, error)
 	UpdateGaugeMetric(m model.GaugeMetric) error
 
 	GetGaugeMetric(name string) (model.GaugeMetric, error)
