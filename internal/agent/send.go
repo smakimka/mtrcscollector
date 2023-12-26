@@ -50,36 +50,31 @@ func sendPollCount(s storage.Storage, client *resty.Client, m model.CounterMetri
 		c <- err
 		return
 	}
+	inc := pollCount.Value - int64(lastPollCount.Value)
+	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &inc}
 
-	reqURL := fmt.Sprintf("/update/%s/%s/%s",
-		m.GetType(),
-		m.GetName(),
-		fmt.Sprint(pollCount.Value-int64(lastPollCount.Value)),
-	)
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)})
+	logger.Log.Debug().Msg(fmt.Sprintf("sending update poll count request (%s)", fmt.Sprint(reqData)))
 
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update poll count request (%s)", reqURL))
-	sendRequest(reqURL, client, c)
+	sendRequest(reqData, client, c)
 }
 
 func sendGaugeMetric(s storage.Storage, client *resty.Client, m model.GaugeMetric, c chan error) {
-	reqURL := fmt.Sprintf("/update/%s/%s/%s", m.GetType(), m.GetName(), m.GetStringValue())
-
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update gauge metric request (%s)", reqURL))
-	sendRequest(reqURL, client, c)
+	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Value: &m.Value}
+	logger.Log.Debug().Msg(fmt.Sprintf("sending update gauge metric request (%s)", fmt.Sprint(reqData)))
+	sendRequest(reqData, client, c)
 }
 
 func sendCounterMetric(s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
-	reqURL := fmt.Sprintf("/update/%s/%s/%s", m.GetType(), m.GetName(), m.GetStringValue())
-
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update counter metric request (%s)", reqURL))
-	sendRequest(reqURL, client, c)
+	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &m.Value}
+	logger.Log.Debug().Msg(fmt.Sprintf("sending update counter metric request (%s)", fmt.Sprint(reqData)))
+	sendRequest(reqData, client, c)
 }
 
-func sendRequest(reqURL string, client *resty.Client, c chan error) {
+func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
 	resp, err := client.R().
-		SetHeader("Content-Type", "text/plain").
-		Post(reqURL)
+		SetBody(data).
+		Post("/update")
 
 	if err != nil {
 		c <- err
