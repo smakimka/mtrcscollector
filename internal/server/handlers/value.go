@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,21 +12,10 @@ import (
 
 type GetMetricValueHandler struct {
 	s storage.Storage
-	l *log.Logger
 }
 
-func NewGetMetricValueHandler() GetMetricValueHandler {
-	return GetMetricValueHandler{}
-}
-
-func (h GetMetricValueHandler) WithLogger(l *log.Logger) GetMetricValueHandler {
-	h.l = l
-	return h
-}
-
-func (h GetMetricValueHandler) WithStorage(s storage.Storage) GetMetricValueHandler {
-	h.s = s
-	return h
+func NewGetMetricValueHandler(s storage.Storage) GetMetricValueHandler {
+	return GetMetricValueHandler{s: s}
 }
 
 func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

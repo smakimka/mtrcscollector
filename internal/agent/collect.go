@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"log"
 	"math/rand"
 	"runtime"
 
@@ -10,14 +9,14 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func CollectMetrics(cfg *config.Config, s storage.Storage, logger *log.Logger) {
+func CollectMetrics(cfg *config.Config, s storage.Storage) {
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
 
-	UpdateMetrics(&m, s, logger)
+	UpdateMetrics(&m, s)
 }
 
-func UpdateMetrics(m *runtime.MemStats, s storage.Storage, logger *log.Logger) {
+func UpdateMetrics(m *runtime.MemStats, s storage.Storage) {
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "Alloc", Value: float64(m.Alloc)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "BuckHashSys", Value: float64(m.BuckHashSys)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "GCCPUFraction", Value: m.GCCPUFraction})

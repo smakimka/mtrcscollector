@@ -1,14 +1,14 @@
 package storage
 
 import (
-	"log"
+	"fmt"
 	"sync"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
 type MemStorage struct {
-	logger         *log.Logger
 	mutex          sync.RWMutex
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
@@ -17,15 +17,9 @@ type MemStorage struct {
 func NewMemStorage() *MemStorage {
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         &log.Logger{},
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
-	return s
-}
-
-func (s *MemStorage) WithLogger(l *log.Logger) *MemStorage {
-	s.logger = l
 	return s
 }
 
@@ -88,7 +82,7 @@ func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
 	defer s.mutex.Unlock()
 
 	s.gaugeMetrics[m.Name] = m.Value
-	s.logger.Printf("updated gauge metric \"%s\" to %f", m.Name, m.Value)
+	logger.Log.Debug().Msg(fmt.Sprintf("updated gauge metric \"%s\" to %f", m.Name, m.Value))
 
 	return nil
 }
@@ -98,6 +92,6 @@ func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) error {
 	defer s.mutex.Unlock()
 
 	s.counterMetrics[m.Name] += m.Value
-	s.logger.Printf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name])
+	logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name]))
 	return nil
 }

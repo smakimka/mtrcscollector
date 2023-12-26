@@ -1,14 +1,13 @@
 package agent
 
 import (
-	"log"
-	"os"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
@@ -36,16 +35,16 @@ func TestUpdateMetrics(t *testing.T) {
 		},
 	}
 
-	l := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			s := storage.NewMemStorage().WithLogger(l)
+			s := storage.NewMemStorage()
 
 			for i := 0; i < test.callTimes; i++ {
 				m := runtime.MemStats{}
 				runtime.ReadMemStats(&m)
-				UpdateMetrics(&m, s, l)
+				UpdateMetrics(&m, s)
 
 				gaugeMetrics, err := s.GetAllGaugeMetrics()
 				assert.NoError(t, err)
