@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -72,9 +73,17 @@ func sendCounterMetric(s storage.Storage, client *resty.Client, m model.CounterM
 }
 
 func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
+	body, err := json.Marshal(data)
+	if err != nil {
+		c <- err
+		return
+	}
+
+	// Можно просто SetBody со структурой, которая сюда передается, но надо чтобы в импортах был хоть где-то json, будет тут
 	resp, err := client.R().
-		SetBody(data).
-		Post("/update")
+		SetHeader("Content-Type", "application/json").
+		SetBody(body).
+		Post("/update/")
 
 	if err != nil {
 		c <- err

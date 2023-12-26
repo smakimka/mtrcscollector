@@ -22,8 +22,8 @@ func GetRouter() chi.Router {
 
 	r.Get("/", getAllMetricsHandler.ServeHTTP)
 
-	r.Post("/update", updateHandler.ServeHTTP)
-	r.Post("/value", valueHandler.ServeHTTP)
+	r.Post("/update/", updateHandler.ServeHTTP)
+	r.Post("/value/", valueHandler.ServeHTTP)
 
 	r.Route("/update/{metricKind}", func(r chi.Router) {
 		r.Use(middleware.MetricKind)
