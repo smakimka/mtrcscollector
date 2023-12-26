@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"runtime"
 	"time"
 
@@ -11,17 +9,16 @@ import (
 
 	"github.com/smakimka/mtrcscollector/internal/agent"
 	"github.com/smakimka/mtrcscollector/internal/agent/config"
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func main() {
 	cfg := config.NewConfig()
+	logger.SetLevel(logger.Debug)
 
-	logger := log.New(os.Stdout, "", 5)
-
-	s := storage.NewMemStorage().
-		WithLogger(logger)
+	s := storage.NewMemStorage()
 
 	client := resty.New()
 	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
@@ -29,13 +26,13 @@ func main() {
 	// инициализация метрик
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
-	agent.UpdateMetrics(&m, s, logger)
+	agent.UpdateMetrics(&m, s)
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "LastPollCount", Value: 0})
 
-	run(cfg, s, logger, client)
+	run(cfg, s, client)
 }
 
-func run(cfg *config.Config, s storage.Storage, l *log.Logger, client *resty.Client) {
+func run(cfg *config.Config, s storage.Storage, client *resty.Client) {
 	pollTicker := time.NewTicker(cfg.PollInterval)
 	defer pollTicker.Stop()
 	reportTicker := time.NewTicker(cfg.ReportInterval)
@@ -46,9 +43,9 @@ func run(cfg *config.Config, s storage.Storage, l *log.Logger, client *resty.Cli
 	for {
 		select {
 		case <-pollTicker.C:
-			go agent.CollectMetrics(cfg, s, l)
+			go agent.CollectMetrics(cfg, s)
 		case <-reportTicker.C:
-			go agent.SendMetrics(cfg, s, l, client, errChan)
+			go agent.SendMetrics(cfg, s, client, errChan)
 		case err := <-errChan:
 			panic(err)
 		}

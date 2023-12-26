@@ -1,14 +1,13 @@
 package storage
 
 import (
-	"log"
-	"os"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
@@ -33,10 +32,9 @@ func TestUpdateGaugeMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -71,10 +69,9 @@ func TestUpdateCounterMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -136,10 +133,9 @@ func TestGetMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -201,10 +197,9 @@ func TestGetAllMetrics(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}

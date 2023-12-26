@@ -2,16 +2,15 @@ package handlers
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	mw "github.com/smakimka/mtrcscollector/internal/server/middleware"
 	"github.com/smakimka/mtrcscollector/internal/storage"
@@ -33,14 +32,12 @@ func testValueRequest(t *testing.T, ts *httptest.Server, method,
 }
 
 func getTestValueRouter() chi.Router {
-	l := log.New(os.Stdout, "", 3)
-
-	s := storage.NewMemStorage().
-		WithLogger(l)
+	logger.SetLevel(logger.Debug)
+	s := storage.NewMemStorage()
 
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "test", Value: 1.5})
 
-	getMetricValueHandler := GetMetricValueHandler{s, l}
+	getMetricValueHandler := GetMetricValueHandler{s}
 
 	r := chi.NewRouter()
 

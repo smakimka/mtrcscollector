@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -14,21 +13,10 @@ import (
 
 type UpdateMetricHandler struct {
 	s storage.Storage
-	l *log.Logger
 }
 
-func NewUpdateMetricHandler() UpdateMetricHandler {
-	return UpdateMetricHandler{}
-}
-
-func (h UpdateMetricHandler) WithLogger(l *log.Logger) UpdateMetricHandler {
-	h.l = l
-	return h
-}
-
-func (h UpdateMetricHandler) WithStorage(s storage.Storage) UpdateMetricHandler {
-	h.s = s
-	return h
+func NewUpdateMetricHandler(s storage.Storage) UpdateMetricHandler {
+	return UpdateMetricHandler{s: s}
 }
 
 func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
