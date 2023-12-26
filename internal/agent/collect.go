@@ -19,6 +19,7 @@ func CollectMetrics(cfg *config.Config, s storage.Storage) {
 func UpdateMetrics(m *runtime.MemStats, s storage.Storage) {
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "Alloc", Value: float64(m.Alloc)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "BuckHashSys", Value: float64(m.BuckHashSys)})
+	s.UpdateGaugeMetric(model.GaugeMetric{Name: "Frees", Value: float64(m.Frees)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "GCCPUFraction", Value: m.GCCPUFraction})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "GCSys", Value: float64(m.GCSys)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "HeapAlloc", Value: float64(m.HeapAlloc)})
@@ -41,6 +42,7 @@ func UpdateMetrics(m *runtime.MemStats, s storage.Storage) {
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "PauseTotalNs", Value: float64(m.PauseTotalNs)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "StackInuse", Value: float64(m.StackInuse)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "StackSys", Value: float64(m.StackSys)})
+	s.UpdateGaugeMetric(model.GaugeMetric{Name: "Sys", Value: float64(m.Sys)})
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "TotalAlloc", Value: float64(m.TotalAlloc)})
 
 	s.UpdateGaugeMetric(model.GaugeMetric{Name: "RandomValue", Value: rand.Float64()})

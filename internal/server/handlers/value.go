@@ -103,8 +103,7 @@ func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		floatValue := float64(m.Value)
-		data.Value = &floatValue
+		data.Delta = &m.Value
 	}
 
 	render.Status(r, http.StatusOK)

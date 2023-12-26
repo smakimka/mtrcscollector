@@ -22,14 +22,14 @@ func TestUpdateMetrics(t *testing.T) {
 		{
 			name:               "single update",
 			callTimes:          1,
-			wantGaugeLength:    26,
+			wantGaugeLength:    28,
 			wantCounterLength:  1,
 			wantPollCountValue: 1,
 		},
 		{
 			name:               "double update",
 			callTimes:          2,
-			wantGaugeLength:    26,
+			wantGaugeLength:    28,
 			wantCounterLength:  1,
 			wantPollCountValue: 2,
 		},

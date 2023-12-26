@@ -116,9 +116,7 @@ func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
 			return
 		}
-		data.Delta = nil
-		newFloatVal := float64(newVal)
-		data.Value = &newFloatVal
+		data.Delta = &newVal
 	}
 
 	render.Status(r, http.StatusOK)

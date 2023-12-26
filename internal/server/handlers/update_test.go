@@ -162,7 +162,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
-				body:        "{\"id\":\"test\",\"type\":\"counter\",\"value\":1}\n",
+				body:        "{\"id\":\"test\",\"type\":\"counter\",\"delta\":1}\n",
 			},
 		},
 		{

@@ -16,7 +16,7 @@ import (
 
 func main() {
 	cfg := config.NewConfig()
-	logger.SetLevel(logger.Debug)
+	logger.SetLevel(logger.Info)
 
 	s := storage.NewMemStorage()
 
@@ -47,7 +47,8 @@ func run(cfg *config.Config, s storage.Storage, client *resty.Client) {
 		case <-reportTicker.C:
 			go agent.SendMetrics(cfg, s, client, errChan)
 		case err := <-errChan:
-			panic(err)
+			fmt.Println(err)
+			//panic(err)
 		}
 	}
 }
