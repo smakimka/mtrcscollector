@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -13,21 +12,10 @@ import (
 
 type GetAllMetricsHandler struct {
 	s storage.Storage
-	l *log.Logger
 }
 
-func NewGetAllMetricsHandler() GetAllMetricsHandler {
-	return GetAllMetricsHandler{}
-}
-
-func (h GetAllMetricsHandler) WithLogger(l *log.Logger) GetAllMetricsHandler {
-	h.l = l
-	return h
-}
-
-func (h GetAllMetricsHandler) WithStorage(s storage.Storage) GetAllMetricsHandler {
-	h.s = s
-	return h
+func NewGetAllMetricsHandler(s storage.Storage) GetAllMetricsHandler {
+	return GetAllMetricsHandler{s: s}
 }
 
 func (h GetAllMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

@@ -1,7 +1,8 @@
 package storage
 
 import (
-	"log"
+	"fmt"
+	"math/rand"
 	"os"
 	"sync"
 	"testing"
@@ -9,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
@@ -33,10 +35,9 @@ func TestUpdateGaugeMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -71,10 +72,9 @@ func TestUpdateCounterMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -136,10 +136,9 @@ func TestGetMetric(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -201,10 +200,9 @@ func TestGetAllMetrics(t *testing.T) {
 		},
 	}
 
-	logger := log.New(os.Stdout, "", 5)
+	logger.SetLevel(logger.Debug)
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         logger,
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
@@ -221,6 +219,52 @@ func TestGetAllMetrics(t *testing.T) {
 			counterMetrics, err := s.GetAllCounterMetrics()
 			require.NoError(t, err, "error getting all gauge metrics from memstorage")
 			assert.ElementsMatch(t, test.wantCounterMetrics, counterMetrics)
+		})
+	}
+}
+
+func TestSaveLoad(t *testing.T) {
+	type Data struct {
+		gaugeMetrics   map[string]float64
+		counterMetrics map[string]int64
+	}
+	tests := []struct {
+		name string
+		save Data
+		load Data
+	}{
+		{
+			name: "load save test #1",
+			save: Data{
+				gaugeMetrics:   map[string]float64{"test_1": 1.1, "test_2": 2.2},
+				counterMetrics: map[string]int64{"test_1": 1, "test_2": 2},
+			},
+			load: Data{
+				map[string]float64{"test_1": 1.1, "test_2": 2.2},
+				map[string]int64{"test_1": 1, "test_2": 2},
+			},
+		},
+	}
+
+	testFilePath := fmt.Sprintf("/tmp/test%d.json", rand.Int63())
+	defer os.Remove(testFilePath)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			s := &MemStorage{
+				mutex:          sync.RWMutex{},
+				gaugeMetrics:   test.save.gaugeMetrics,
+				counterMetrics: test.save.counterMetrics,
+			}
+
+			err := s.Save(testFilePath)
+			require.NoError(t, err)
+
+			err = s.Restore(testFilePath)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.load.gaugeMetrics, s.gaugeMetrics)
+			assert.Equal(t, test.load.counterMetrics, s.counterMetrics)
 		})
 	}
 }

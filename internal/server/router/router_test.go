@@ -7,6 +7,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func testRequest(t *testing.T, ts *httptest.Server, url, method string) *http.Response {
@@ -114,7 +116,8 @@ func TestRouter(t *testing.T) {
 		},
 	}
 
-	ts := httptest.NewServer(GetRouter())
+	s := storage.NewMemStorage()
+	ts := httptest.NewServer(GetRouter(s))
 	defer ts.Close()
 
 	for _, test := range tests {
