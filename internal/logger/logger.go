@@ -17,7 +17,7 @@ const (
 	Info
 )
 
-var ErrNoSuchLevel = errors.New("No such logging level")
+var ErrNoSuchLevel = errors.New("no such logging level")
 
 func SetLevel(lvl Level) error {
 	switch lvl {
