@@ -1,16 +1,15 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
@@ -26,12 +25,10 @@ func testAllMtrcsRequest(t *testing.T, ts *httptest.Server, method string) *http
 }
 
 func getTestAllMtrcsRouter() chi.Router {
-	l := log.New(os.Stdout, "", 3)
+	logger.SetLevel(logger.Debug)
+	s := storage.NewMemStorage()
 
-	s := storage.NewMemStorage().
-		WithLogger(l)
-
-	getAllMetricsHandler := GetAllMetricsHandler{s, l}
+	getAllMetricsHandler := GetAllMetricsHandler{s}
 	r := chi.NewRouter()
 	r.Get("/", getAllMetricsHandler.ServeHTTP)
 
