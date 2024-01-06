@@ -1,6 +1,8 @@
 package agent
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -79,10 +81,17 @@ func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
 		return
 	}
 
+	zipBody := bytes.NewBuffer([]byte{})
+	zw := gzip.NewWriter(zipBody)
+	zw.Write(body)
+	zw.Close()
+
 	// Можно просто SetBody со структурой, которая сюда передается, но надо чтобы в импортах был хоть где-то json, будет тут
 	resp, err := client.R().
 		SetHeader("Content-Type", "application/json").
-		SetBody(body).
+		SetHeader("Content-Encoding", "gzip").
+		SetHeader("Accept-Encoding", "gzip").
+		SetBody(zipBody).
 		Post("/update/")
 
 	if err != nil {
