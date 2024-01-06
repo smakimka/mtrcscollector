@@ -7,6 +7,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/server/config"
 	"github.com/smakimka/mtrcscollector/internal/server/router"
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 func main() {
@@ -18,7 +19,20 @@ func main() {
 
 func run(cfg *config.Config) error {
 	logger.SetLevel(logger.Info)
-	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
 
-	return http.ListenAndServe(cfg.Addr, router.GetRouter())
+	var s storage.Storage
+	if cfg.StoreInterval == 0 {
+		s = storage.NewSyncMemStorage(cfg.FileStoragePath)
+	} else {
+		s = storage.NewMemStorage()
+	}
+
+	if cfg.Restore {
+		if err := s.Restore(cfg.FileStoragePath); err != nil {
+			return err
+		}
+	}
+
+	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s))
 }

@@ -19,4 +19,6 @@ type Storage interface {
 
 	GetAllGaugeMetrics() ([]model.GaugeMetric, error)
 	GetAllCounterMetrics() ([]model.CounterMetric, error)
+
+	Restore(filePath string) error
 }

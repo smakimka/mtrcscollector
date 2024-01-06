@@ -8,9 +8,15 @@ import (
 
 func TestServerConfig(t *testing.T) {
 	defaultValues := struct {
-		addr string
+		addr            string
+		storeInterval   int
+		fileStoragePath string
+		restore         bool
 	}{
 		"localhost:8080",
+		300,
+		"/tmp/metrics-db.json",
+		true,
 	}
 
 	cfg := NewConfig()

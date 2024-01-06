@@ -8,9 +8,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func GetRouter() chi.Router {
-	s := storage.NewMemStorage()
-
+func GetRouter(s storage.Storage) chi.Router {
 	getAllMetricsHandler := handlers.NewGetAllMetricsHandler(s)
 	updateMetricHandler := handlers.NewUpdateMetricHandler(s)
 	getMetricValueHandler := handlers.NewGetMetricValueHandler(s)

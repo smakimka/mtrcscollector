@@ -1,7 +1,11 @@
 package storage
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
 	"sync"
 
 	"github.com/smakimka/mtrcscollector/internal/logger"
@@ -21,6 +25,48 @@ func NewMemStorage() *MemStorage {
 		counterMetrics: make(map[string]int64),
 	}
 	return s
+}
+
+type SaveData struct {
+	GaugeMetrics   map[string]float64 `json:"gauge_metrics"`
+	CounterMetrics map[string]int64   `json:"counter_metrics"`
+}
+
+func (s *MemStorage) Save(filePath string) error {
+	data := SaveData{}
+
+	data.GaugeMetrics = s.gaugeMetrics
+	data.CounterMetrics = s.counterMetrics
+
+	byteData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(filePath, byteData, fs.FileMode(0644))
+
+	return nil
+}
+
+func (s *MemStorage) Restore(filePath string) error {
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	metricsData := SaveData{}
+	if err = json.Unmarshal(data, &metricsData); err != nil {
+		return err
+	}
+
+	s.gaugeMetrics = metricsData.GaugeMetrics
+	s.counterMetrics = metricsData.CounterMetrics
+
+	return nil
 }
 
 func (s *MemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
