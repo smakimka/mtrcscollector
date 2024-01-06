@@ -21,4 +21,5 @@ type Storage interface {
 	GetAllCounterMetrics() ([]model.CounterMetric, error)
 
 	Restore(filePath string) error
+	Save(filePath string) error
 }

@@ -18,6 +18,10 @@ func (s *SyncMemStorage) Restore(filePath string) error {
 	return s.s.Restore(filePath)
 }
 
+func (s *SyncMemStorage) Save(filePath string) error {
+	return s.s.Save(filePath)
+}
+
 func (s *SyncMemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, error) {
 	res, err := s.s.UpdateCounterMetric(m)
 	if err != nil {

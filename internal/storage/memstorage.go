@@ -33,6 +33,9 @@ type SaveData struct {
 }
 
 func (s *MemStorage) Save(filePath string) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
 	data := SaveData{}
 
 	data.GaugeMetrics = s.gaugeMetrics
@@ -49,6 +52,9 @@ func (s *MemStorage) Save(filePath string) error {
 }
 
 func (s *MemStorage) Restore(filePath string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
