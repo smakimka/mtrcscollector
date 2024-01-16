@@ -48,7 +48,6 @@ func run(cfg *config.Config, s storage.Storage, client *resty.Client) {
 			go agent.SendMetrics(cfg, s, client, errChan)
 		case err := <-errChan:
 			fmt.Println(err)
-			//panic(err)
 		}
 	}
 }
