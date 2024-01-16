@@ -1,14 +1,18 @@
 package storage
 
 import (
-	"log"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io/fs"
+	"os"
 	"sync"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
 type MemStorage struct {
-	logger         *log.Logger
 	mutex          sync.RWMutex
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
@@ -17,16 +21,58 @@ type MemStorage struct {
 func NewMemStorage() *MemStorage {
 	s := &MemStorage{
 		mutex:          sync.RWMutex{},
-		logger:         &log.Logger{},
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
 	return s
 }
 
-func (s *MemStorage) WithLogger(l *log.Logger) *MemStorage {
-	s.logger = l
-	return s
+type SaveData struct {
+	GaugeMetrics   map[string]float64 `json:"gauge_metrics"`
+	CounterMetrics map[string]int64   `json:"counter_metrics"`
+}
+
+func (s *MemStorage) Save(filePath string) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+
+	data := SaveData{}
+
+	data.GaugeMetrics = s.gaugeMetrics
+	data.CounterMetrics = s.counterMetrics
+
+	byteData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	os.WriteFile(filePath, byteData, fs.FileMode(0644))
+
+	return nil
+}
+
+func (s *MemStorage) Restore(filePath string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if _, err := os.Stat(filePath); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+
+	metricsData := SaveData{}
+	if err = json.Unmarshal(data, &metricsData); err != nil {
+		return err
+	}
+
+	s.gaugeMetrics = metricsData.GaugeMetrics
+	s.counterMetrics = metricsData.CounterMetrics
+
+	return nil
 }
 
 func (s *MemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
@@ -88,16 +134,16 @@ func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
 	defer s.mutex.Unlock()
 
 	s.gaugeMetrics[m.Name] = m.Value
-	s.logger.Printf("updated gauge metric \"%s\" to %f", m.Name, m.Value)
+	logger.Log.Debug().Msg(fmt.Sprintf("updated gauge metric \"%s\" to %f", m.Name, m.Value))
 
 	return nil
 }
 
-func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) error {
+func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.counterMetrics[m.Name] += m.Value
-	s.logger.Printf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name])
-	return nil
+	logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name]))
+	return s.counterMetrics[m.Name], nil
 }

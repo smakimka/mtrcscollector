@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -13,21 +12,10 @@ import (
 
 type GetMetricValueHandler struct {
 	s storage.Storage
-	l *log.Logger
 }
 
-func NewGetMetricValueHandler() GetMetricValueHandler {
-	return GetMetricValueHandler{}
-}
-
-func (h GetMetricValueHandler) WithLogger(l *log.Logger) GetMetricValueHandler {
-	h.l = l
-	return h
-}
-
-func (h GetMetricValueHandler) WithStorage(s storage.Storage) GetMetricValueHandler {
-	h.s = s
-	return h
+func NewGetMetricValueHandler(s storage.Storage) GetMetricValueHandler {
+	return GetMetricValueHandler{s: s}
 }
 
 func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -67,4 +55,57 @@ func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		render.PlainText(w, r, metric.GetStringValue())
 	}
 
+}
+
+type ValueHandler struct {
+	s storage.Storage
+}
+
+func NewValueHandler(s storage.Storage) ValueHandler {
+	return ValueHandler{s: s}
+}
+
+func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	data := &model.MetricsData{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+		return
+	}
+
+	switch data.Kind {
+	case model.Gauge:
+		m, err := h.s.GetGaugeMetric(data.Name)
+		if err != nil {
+			if err == storage.ErrNoSuchMetric {
+				render.Status(r, http.StatusNotFound)
+				render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+				return
+			}
+
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+
+		data.Value = &m.Value
+	case model.Counter:
+		m, err := h.s.GetCounterMetric(data.Name)
+		if err != nil {
+			if err == storage.ErrNoSuchMetric {
+				render.Status(r, http.StatusNotFound)
+				render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+				return
+			}
+
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+
+		data.Delta = &m.Value
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, data)
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -14,21 +13,10 @@ import (
 
 type UpdateMetricHandler struct {
 	s storage.Storage
-	l *log.Logger
 }
 
-func NewUpdateMetricHandler() UpdateMetricHandler {
-	return UpdateMetricHandler{}
-}
-
-func (h UpdateMetricHandler) WithLogger(l *log.Logger) UpdateMetricHandler {
-	h.l = l
-	return h
-}
-
-func (h UpdateMetricHandler) WithStorage(s storage.Storage) UpdateMetricHandler {
-	h.s = s
-	return h
+func NewUpdateMetricHandler(s storage.Storage) UpdateMetricHandler {
+	return UpdateMetricHandler{s: s}
 }
 
 func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +51,7 @@ func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = h.s.UpdateCounterMetric(model.CounterMetric{
+		_, err = h.s.UpdateCounterMetric(model.CounterMetric{
 			Name:  chi.URLParam(r, "metricName"),
 			Value: value,
 		})
@@ -77,4 +65,60 @@ func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		render.Status(r, http.StatusOK)
 		render.PlainText(w, r, "")
 	}
+}
+
+type UpdateHandler struct {
+	s storage.Storage
+}
+
+func NewUpdateHandler(s storage.Storage) UpdateHandler {
+	return UpdateHandler{s: s}
+}
+
+func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	data := &model.MetricsData{}
+	if err := render.Bind(r, data); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+		return
+	}
+
+	switch data.Kind {
+	case model.Gauge:
+		if data.Value == nil {
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, model.Response{Ok: false, Detail: model.ErrMissingFields.Error()})
+			return
+		}
+
+		err := h.s.UpdateGaugeMetric(model.GaugeMetric{
+			Name:  data.Name,
+			Value: *data.Value,
+		})
+		if err != nil {
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+	case model.Counter:
+		if data.Delta == nil {
+			render.Status(r, http.StatusBadRequest)
+			render.JSON(w, r, model.Response{Ok: false, Detail: model.ErrMissingFields.Error()})
+			return
+		}
+
+		newVal, err := h.s.UpdateCounterMetric(model.CounterMetric{
+			Name:  data.Name,
+			Value: *data.Delta,
+		})
+		if err != nil {
+			render.Status(r, http.StatusInternalServerError)
+			render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
+			return
+		}
+		data.Delta = &newVal
+	}
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, data)
 }
