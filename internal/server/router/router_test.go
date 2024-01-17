@@ -5,7 +5,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -118,7 +117,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	s := storage.NewMemStorage()
-	ts := httptest.NewServer(GetRouter(s, &pgxpool.Pool{}))
+	ts := httptest.NewServer(GetRouter(s))
 	defer ts.Close()
 
 	for _, test := range tests {

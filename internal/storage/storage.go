@@ -26,7 +26,10 @@ type Getter interface {
 type Storage interface {
 	Updater
 	Getter
+}
 
+type SyncStorage interface {
+	Storage
 	Restore(filePath string) error
 	Save(filePath string) error
 }

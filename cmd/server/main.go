@@ -28,13 +28,32 @@ func run(cfg *config.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, cfg.DatabaseDSN)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
 	var s storage.Storage
+	if cfg.DatabaseDSN == "" {
+		storage, err := initSyncStorage(cfg)
+		if err != nil {
+			return err
+		}
+		s = storage
+	} else {
+		pool, err := pgxpool.New(ctx, cfg.DatabaseDSN)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+
+		s, err = storage.NewPGStorage(ctx, pool)
+		if err != nil {
+			return err
+		}
+	}
+
+	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s))
+}
+
+func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {
+	var s storage.SyncStorage
 	if cfg.StoreInterval == 0 {
 		s = storage.NewSyncMemStorage(cfg.FileStoragePath)
 	} else {
@@ -44,7 +63,7 @@ func run(cfg *config.Config) error {
 
 	if cfg.Restore {
 		if err := s.Restore(cfg.FileStoragePath); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -59,11 +78,10 @@ func run(cfg *config.Config) error {
 		}
 	}()
 
-	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
-	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, pool))
+	return s, nil
 }
 
-func saveMetrics(s storage.Storage, cfg *config.Config) {
+func saveMetrics(s storage.SyncStorage, cfg *config.Config) {
 	saveTicker := time.NewTicker(time.Duration(cfg.StoreInterval) * time.Second)
 
 	for range saveTicker.C {

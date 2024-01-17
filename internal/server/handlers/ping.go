@@ -4,16 +4,16 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
 type PingHandler struct {
-	p *pgxpool.Pool
+	s storage.Storage
 }
 
-func NewPingHandler(pool *pgxpool.Pool) PingHandler {
+func NewPingHandler(s storage.Storage) PingHandler {
 	return PingHandler{
-		p: pool,
+		s: s,
 	}
 }
 
@@ -21,10 +21,15 @@ func (h PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	if err := h.p.Ping(ctx); err != nil {
+	switch s := h.s.(type) {
+	case storage.PGStorage:
+		err := s.Ping(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		return
 	}
-
-	w.WriteHeader(http.StatusOK)
 }

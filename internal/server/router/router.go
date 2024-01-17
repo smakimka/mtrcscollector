@@ -2,20 +2,19 @@ package router
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/smakimka/mtrcscollector/internal/server/handlers"
 	"github.com/smakimka/mtrcscollector/internal/server/middleware"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func GetRouter(s storage.Storage, pool *pgxpool.Pool) chi.Router {
+func GetRouter(s storage.Storage) chi.Router {
 	getAllMetricsHandler := handlers.NewGetAllMetricsHandler(s)
 	updateMetricHandler := handlers.NewUpdateMetricHandler(s)
 	getMetricValueHandler := handlers.NewGetMetricValueHandler(s)
 	updateHandler := handlers.NewUpdateHandler(s)
 	valueHandler := handlers.NewValueHandler(s)
-	pingHandler := handlers.NewPingHandler(pool)
+	pingHandler := handlers.NewPingHandler(s)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
