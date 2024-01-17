@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"os"
@@ -41,11 +42,12 @@ func TestUpdateGaugeMetric(t *testing.T) {
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
+	ctx := context.Background()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s.gaugeMetrics = test.gaugeMetrics
-			s.UpdateGaugeMetric(test.newMetric)
+			s.UpdateGaugeMetric(ctx, test.newMetric)
 			assert.Equal(t, test.want, s.gaugeMetrics)
 		})
 	}
@@ -78,11 +80,12 @@ func TestUpdateCounterMetric(t *testing.T) {
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
+	ctx := context.Background()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s.counterMetrics = test.counterMetrics
-			s.UpdateCounterMetric(test.newMetric)
+			s.UpdateCounterMetric(ctx, test.newMetric)
 			assert.Equal(t, test.want, s.counterMetrics)
 		})
 	}
@@ -142,6 +145,7 @@ func TestGetMetric(t *testing.T) {
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
+	ctx := context.Background()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -150,7 +154,7 @@ func TestGetMetric(t *testing.T) {
 
 			switch test.metricKind {
 			case model.Gauge:
-				m, err := s.GetGaugeMetric(test.metricName)
+				m, err := s.GetGaugeMetric(ctx, test.metricName)
 				if test.wantErr {
 					assert.Error(t, err)
 				} else {
@@ -158,7 +162,7 @@ func TestGetMetric(t *testing.T) {
 					assert.Equal(t, test.wantMetric, m)
 				}
 			case model.Counter:
-				m, err := s.GetCounterMetric(test.metricName)
+				m, err := s.GetCounterMetric(ctx, test.metricName)
 				if test.wantErr {
 					assert.Error(t, err)
 				} else {
@@ -206,17 +210,18 @@ func TestGetAllMetrics(t *testing.T) {
 		gaugeMetrics:   make(map[string]float64),
 		counterMetrics: make(map[string]int64),
 	}
+	ctx := context.Background()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			s.gaugeMetrics = test.gaugeMetrics
 			s.counterMetrics = test.counterMetrics
 
-			gaugeMetrics, err := s.GetAllGaugeMetrics()
+			gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 			require.NoError(t, err, "error getting all gauge metrics from memstorage")
 			assert.ElementsMatch(t, test.wantGaugeMetrics, gaugeMetrics)
 
-			counterMetrics, err := s.GetAllCounterMetrics()
+			counterMetrics, err := s.GetAllCounterMetrics(ctx)
 			require.NoError(t, err, "error getting all gauge metrics from memstorage")
 			assert.ElementsMatch(t, test.wantCounterMetrics, counterMetrics)
 		})

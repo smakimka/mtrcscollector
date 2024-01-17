@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,14 +16,14 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func SendMetrics(cfg *config.Config, s storage.Storage, client *resty.Client, c chan error) {
-	gaugeMetrics, err := s.GetAllGaugeMetrics()
+func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client, c chan error) {
+	gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 	if err != nil {
 		c <- err
 		return
 	}
 
-	counterMetrics, err := s.GetAllCounterMetrics()
+	counterMetrics, err := s.GetAllCounterMetrics(ctx)
 	if err != nil {
 		c <- err
 		return
@@ -34,21 +35,21 @@ func SendMetrics(cfg *config.Config, s storage.Storage, client *resty.Client, c 
 
 	for _, counterMetric := range counterMetrics {
 		if counterMetric.Name == "PollCount" {
-			go sendPollCount(s, client, counterMetric, c)
+			go sendPollCount(ctx, s, client, counterMetric, c)
 			continue
 		}
 		go sendCounterMetric(s, client, counterMetric, c)
 	}
 }
 
-func sendPollCount(s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
-	pollCount, err := s.GetCounterMetric("PollCount")
+func sendPollCount(ctx context.Context, s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
+	pollCount, err := s.GetCounterMetric(ctx, "PollCount")
 	if err != nil {
 		c <- err
 		return
 	}
 
-	lastPollCount, err := s.GetGaugeMetric("LastPollCount")
+	lastPollCount, err := s.GetGaugeMetric(ctx, "LastPollCount")
 	if err != nil {
 		c <- err
 		return
@@ -56,7 +57,7 @@ func sendPollCount(s storage.Storage, client *resty.Client, m model.CounterMetri
 	inc := pollCount.Value - int64(lastPollCount.Value)
 	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &inc}
 
-	s.UpdateGaugeMetric(model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)})
+	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)})
 	logger.Log.Debug().Msg(fmt.Sprintf("sending update poll count request (%s)", fmt.Sprint(reqData)))
 
 	sendRequest(reqData, client, c)

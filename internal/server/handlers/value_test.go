@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -41,7 +42,7 @@ func getTestValueRouter() chi.Router {
 	logger.SetLevel(logger.Debug)
 	s := storage.NewMemStorage()
 
-	s.UpdateGaugeMetric(model.GaugeMetric{Name: "test", Value: 1.5})
+	s.UpdateGaugeMetric(context.Background(), model.GaugeMetric{Name: "test", Value: 1.5})
 
 	getMetricValueHandler := GetMetricValueHandler{s}
 	valueHandler := ValueHandler{s}

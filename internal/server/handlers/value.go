@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -19,9 +20,12 @@ func NewGetMetricValueHandler(s storage.Storage) GetMetricValueHandler {
 }
 
 func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	switch chi.URLParam(r, "metricKind") {
 	case model.Gauge:
-		metric, err := h.s.GetGaugeMetric(chi.URLParam(r, "metricName"))
+		metric, err := h.s.GetGaugeMetric(ctx, chi.URLParam(r, "metricName"))
 
 		if err != nil {
 			if err == storage.ErrNoSuchMetric {
@@ -38,7 +42,7 @@ func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		render.PlainText(w, r, metric.GetStringValue())
 
 	case model.Counter:
-		metric, err := h.s.GetCounterMetric(chi.URLParam(r, "metricName"))
+		metric, err := h.s.GetCounterMetric(ctx, chi.URLParam(r, "metricName"))
 
 		if err != nil {
 			if err == storage.ErrNoSuchMetric {
@@ -66,6 +70,9 @@ func NewValueHandler(s storage.Storage) ValueHandler {
 }
 
 func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	data := &model.MetricsData{}
 	if err := render.Bind(r, data); err != nil {
 		render.Status(r, http.StatusBadRequest)
@@ -75,7 +82,7 @@ func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch data.Kind {
 	case model.Gauge:
-		m, err := h.s.GetGaugeMetric(data.Name)
+		m, err := h.s.GetGaugeMetric(ctx, data.Name)
 		if err != nil {
 			if err == storage.ErrNoSuchMetric {
 				render.Status(r, http.StatusNotFound)
@@ -90,7 +97,7 @@ func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		data.Value = &m.Value
 	case model.Counter:
-		m, err := h.s.GetCounterMetric(data.Name)
+		m, err := h.s.GetCounterMetric(ctx, data.Name)
 		if err != nil {
 			if err == storage.ErrNoSuchMetric {
 				render.Status(r, http.StatusNotFound)

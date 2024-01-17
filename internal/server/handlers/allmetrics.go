@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -19,7 +20,10 @@ func NewGetAllMetricsHandler(s storage.Storage) GetAllMetricsHandler {
 }
 
 func (h GetAllMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	gaugeMetrics, err := h.s.GetAllGaugeMetrics()
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	gaugeMetrics, err := h.s.GetAllGaugeMetrics(ctx)
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.PlainText(w, r, err.Error())
@@ -39,7 +43,7 @@ func (h GetAllMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	numHeadStart := len(gaugeMetrics)
 
-	counterMetrics, err := h.s.GetAllCounterMetrics()
+	counterMetrics, err := h.s.GetAllCounterMetrics(ctx)
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.PlainText(w, r, err.Error())

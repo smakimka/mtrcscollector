@@ -18,7 +18,7 @@ func NewPingHandler(pool *pgxpool.Pool) PingHandler {
 }
 
 func (h PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
 	if err := h.p.Ping(ctx); err != nil {
