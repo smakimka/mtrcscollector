@@ -55,7 +55,7 @@ func sendPollCount(ctx context.Context, s storage.Storage, client *resty.Client,
 		return
 	}
 	inc := pollCount.Value - int64(lastPollCount.Value)
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &inc}
+	reqData := &model.MetricData{Name: m.Name, Kind: m.GetType(), Delta: &inc}
 
 	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)})
 	logger.Log.Debug().Msg(fmt.Sprintf("sending update poll count request (%s)", fmt.Sprint(reqData)))
@@ -64,18 +64,18 @@ func sendPollCount(ctx context.Context, s storage.Storage, client *resty.Client,
 }
 
 func sendGaugeMetric(s storage.Storage, client *resty.Client, m model.GaugeMetric, c chan error) {
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Value: &m.Value}
+	reqData := &model.MetricData{Name: m.Name, Kind: m.GetType(), Value: &m.Value}
 	logger.Log.Debug().Msg(fmt.Sprintf("sending update gauge metric request (%s)", fmt.Sprint(reqData)))
 	sendRequest(reqData, client, c)
 }
 
 func sendCounterMetric(s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &m.Value}
+	reqData := &model.MetricData{Name: m.Name, Kind: m.GetType(), Delta: &m.Value}
 	logger.Log.Debug().Msg(fmt.Sprintf("sending update counter metric request (%s)", fmt.Sprint(reqData)))
 	sendRequest(reqData, client, c)
 }
 
-func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
+func sendRequest(data *model.MetricData, client *resty.Client, c chan error) {
 	body, err := json.Marshal(data)
 	if err != nil {
 		c <- err

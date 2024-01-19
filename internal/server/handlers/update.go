@@ -83,7 +83,7 @@ func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	data := &model.MetricsData{}
+	data := &model.MetricData{}
 	if err := render.Bind(r, data); err != nil {
 		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})

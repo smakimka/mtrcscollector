@@ -14,6 +14,7 @@ var (
 type Updater interface {
 	UpdateCounterMetric(ctx context.Context, m model.CounterMetric) (int64, error)
 	UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error
+	UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error)
 }
 
 type Getter interface {

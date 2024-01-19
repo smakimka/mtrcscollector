@@ -63,3 +63,16 @@ func (s *SyncMemStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeM
 func (s *SyncMemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error) {
 	return s.s.GetAllCounterMetrics(ctx)
 }
+
+func (s *SyncMemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error) {
+	metricsData, err := s.s.UpdateMetrics(ctx, metricsData)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.s.Save(s.syncFile); err != nil {
+		return nil, err
+	}
+
+	return metricsData, nil
+}

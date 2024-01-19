@@ -148,3 +148,25 @@ func (s *MemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMet
 	logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name]))
 	return s.counterMetrics[m.Name], nil
 }
+
+func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	for i := range metricsData {
+		metricData := metricsData[i]
+
+		switch metricData.Kind {
+		case model.Gauge:
+			s.gaugeMetrics[metricData.Name] = *metricData.Value
+			logger.Log.Debug().Msg(fmt.Sprintf("updated gauge metric \"%s\" to %f", metricData.Name, *metricData.Value))
+		case model.Counter:
+			s.counterMetrics[metricData.Name] += *metricData.Delta
+			newValue := s.counterMetrics[metricData.Name]
+			metricsData[i].Delta = &newValue
+			logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", metricData.Name, newValue))
+		}
+	}
+
+	return metricsData, nil
+}

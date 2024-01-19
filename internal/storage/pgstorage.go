@@ -177,3 +177,78 @@ func (s PGStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMet
 
 	return metrics, nil
 }
+
+func (s PGStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error) {
+	tx, err := s.p.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	for i := range metricsData {
+		metricData := metricsData[i]
+
+		switch metricData.Kind {
+		case model.Gauge:
+			err := txUpdateGaugeMetric(ctx, tx, metricData)
+			if err != nil {
+				return nil, err
+			}
+		case model.Counter:
+			newValue, err := txUpdateCounterMetric(ctx, tx, metricData)
+			if err != nil {
+				return nil, err
+			}
+			metricsData[i].Delta = &newValue
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return metricsData, nil
+}
+
+func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) error {
+	res, err := tx.Exec(ctx, "update gauge_metrics set value = $1 where name like $2", metricData.Value, metricData.Name)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		_, err := tx.Exec(ctx, "insert into gauge_metrics (name, value) values ($1, $2)", metricData.Name, metricData.Value)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) (int64, error) {
+	row := tx.QueryRow(ctx, "select id, value from counter_metrics where name like $1", metricData.Name)
+	var id int16
+	var value int64
+
+	err := row.Scan(&id, &value)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			_, err := tx.Exec(ctx, "insert into counter_metrics (name, value) values ($1, $2)", metricData.Name, *metricData.Value)
+			if err != nil {
+				return 0, err
+			}
+			return *metricData.Delta, nil
+		} else {
+			return 0, err
+		}
+	}
+
+	newVal := *metricData.Delta + value
+	_, err = tx.Exec(ctx, "update counter_metrics set value = $1 where id = $2", newVal, id)
+	if err != nil {
+		return 0, err
+	}
+
+	return newVal, nil
+}

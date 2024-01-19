@@ -8,14 +8,14 @@ import (
 var ErrMissingFields = errors.New("missing some of required fields")
 var ErrWrongMetricKind = errors.New("wrong metric kind")
 
-type MetricsData struct {
+type MetricData struct {
 	Name  string   `json:"id"`              // имя метрики
 	Kind  string   `json:"type"`            // параметр, принимающий значение gauge или counter
 	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
-func (m *MetricsData) Bind(r *http.Request) error {
+func (m *MetricData) Bind(r *http.Request) error {
 	if m.Name == "" || m.Kind == "" {
 		return ErrMissingFields
 	}
@@ -24,6 +24,18 @@ func (m *MetricsData) Bind(r *http.Request) error {
 		return ErrWrongMetricKind
 	}
 
+	return nil
+}
+
+type MetricsData []MetricData
+
+func (d MetricsData) Bind(r *http.Request) error {
+	for _, metricData := range d {
+		err := metricData.Bind(r)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
