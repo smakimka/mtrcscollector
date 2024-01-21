@@ -129,7 +129,7 @@ func TestMetricsUpdateHandler(t *testing.T) {
 	}
 }
 
-type testMetricsData struct {
+type testMetricData struct {
 	Name  string  `json:"id"`
 	Kind  string  `json:"type"`
 	Value float64 `json:"value,omitempty"`
@@ -144,12 +144,12 @@ func TestUpdateHandler(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		body testMetricsData
+		body testMetricData
 		want want
 	}{
 		{
 			name: "positive test #1",
-			body: testMetricsData{Name: "test", Kind: "gauge", Value: 1.1},
+			body: testMetricData{Name: "test", Kind: "gauge", Value: 1.1},
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
@@ -158,7 +158,7 @@ func TestUpdateHandler(t *testing.T) {
 		},
 		{
 			name: "positive test #2",
-			body: testMetricsData{Name: "test", Kind: "counter", Delta: 1},
+			body: testMetricData{Name: "test", Kind: "counter", Delta: 1},
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
@@ -167,7 +167,7 @@ func TestUpdateHandler(t *testing.T) {
 		},
 		{
 			name: "not existent metric type",
-			body: testMetricsData{Name: "test", Kind: "not_existing", Value: 1},
+			body: testMetricData{Name: "test", Kind: "not_existing", Value: 1},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
@@ -176,7 +176,7 @@ func TestUpdateHandler(t *testing.T) {
 		},
 		{
 			name: "no metric kind",
-			body: testMetricsData{Name: "test", Value: 1},
+			body: testMetricData{Name: "test", Value: 1},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
@@ -185,7 +185,7 @@ func TestUpdateHandler(t *testing.T) {
 		},
 		{
 			name: "no metric value",
-			body: testMetricsData{Name: "test", Kind: "gauge"},
+			body: testMetricData{Name: "test", Kind: "gauge"},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
@@ -194,7 +194,7 @@ func TestUpdateHandler(t *testing.T) {
 		},
 		{
 			name: "no metric name",
-			body: testMetricsData{Kind: "gauge", Value: 1},
+			body: testMetricData{Kind: "gauge", Value: 1},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",

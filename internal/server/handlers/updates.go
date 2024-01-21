@@ -14,22 +14,22 @@ type UpdatesHandler struct {
 	s storage.Storage
 }
 
-func NewUpdatesHandler(s storage.Storage) UpdateHandler {
-	return UpdateHandler{s: s}
+func NewUpdatesHandler(s storage.Storage) UpdatesHandler {
+	return UpdatesHandler{s: s}
 }
 
 func (h UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 
-	data := model.MetricsData{}
+	data := new(model.MetricsData)
 	if err := render.Bind(r, data); err != nil {
 		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
 		return
 	}
 
-	metrics, err := h.s.UpdateMetrics(ctx, data)
+	err := h.s.UpdateMetrics(ctx, *data)
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
@@ -37,5 +37,5 @@ func (h UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, metrics)
+	render.JSON(w, r, model.Response{Ok: true})
 }

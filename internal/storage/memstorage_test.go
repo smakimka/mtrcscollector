@@ -273,3 +273,58 @@ func TestSaveLoad(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateMetrics(t *testing.T) {
+	type want struct {
+		gaugeMetrics   map[string]float64
+		counterMetrics map[string]int64
+	}
+	tests := []struct {
+		name    string
+		updates model.MetricsData
+		Delta   int64
+		want
+	}{
+		{
+			name: "test counter twice",
+			updates: model.MetricsData{
+				model.UpdatesMetricData{
+					Name:  "testCounter",
+					Kind:  model.Counter,
+					Delta: new(int64),
+				},
+				model.UpdatesMetricData{
+					Name:  "testCounter",
+					Kind:  model.Counter,
+					Delta: new(int64),
+				},
+			},
+			Delta: 2,
+			want: want{
+				gaugeMetrics:   map[string]float64{},
+				counterMetrics: map[string]int64{"testCounter": 4},
+			},
+		},
+	}
+
+	s := &MemStorage{
+		mutex:          sync.RWMutex{},
+		gaugeMetrics:   map[string]float64{},
+		counterMetrics: map[string]int64{},
+	}
+	ctx := context.Background()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			for i := range test.updates {
+				test.updates[i].Delta = &test.Delta
+			}
+
+			err := s.UpdateMetrics(ctx, test.updates)
+			require.NoError(t, err)
+
+			assert.Equal(t, test.want.gaugeMetrics, s.gaugeMetrics)
+			assert.Equal(t, test.want.counterMetrics, s.counterMetrics)
+		})
+	}
+}

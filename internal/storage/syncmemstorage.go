@@ -64,15 +64,15 @@ func (s *SyncMemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.Coun
 	return s.s.GetAllCounterMetrics(ctx)
 }
 
-func (s *SyncMemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error) {
-	metricsData, err := s.s.UpdateMetrics(ctx, metricsData)
+func (s *SyncMemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error {
+	err := s.s.UpdateMetrics(ctx, metricsData)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if err = s.s.Save(s.syncFile); err != nil {
-		return nil, err
+		return err
 	}
 
-	return metricsData, nil
+	return err
 }

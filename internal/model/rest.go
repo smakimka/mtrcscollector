@@ -15,6 +15,13 @@ type MetricData struct {
 	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
 }
 
+type UpdatesMetricData struct {
+	Name  string   `json:"ID"`              // имя метрики
+	Kind  string   `json:"MType"`           // параметр, принимающий значение gauge или counter
+	Delta *int64   `json:"Delta,omitempty"` // значение метрики в случае передачи counter
+	Value *float64 `json:"Value,omitempty"` // значение метрики в случае передачи gauge
+}
+
 func (m *MetricData) Bind(r *http.Request) error {
 	if m.Name == "" || m.Kind == "" {
 		return ErrMissingFields
@@ -27,7 +34,19 @@ func (m *MetricData) Bind(r *http.Request) error {
 	return nil
 }
 
-type MetricsData []MetricData
+func (m *UpdatesMetricData) Bind(r *http.Request) error {
+	if m.Name == "" || m.Kind == "" {
+		return ErrMissingFields
+	}
+
+	if m.Kind != Gauge && m.Kind != Counter {
+		return ErrWrongMetricKind
+	}
+
+	return nil
+}
+
+type MetricsData []UpdatesMetricData
 
 func (d MetricsData) Bind(r *http.Request) error {
 	for _, metricData := range d {

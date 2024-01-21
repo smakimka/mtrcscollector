@@ -149,13 +149,11 @@ func (s *MemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMet
 	return s.counterMetrics[m.Name], nil
 }
 
-func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) (model.MetricsData, error) {
+func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	for i := range metricsData {
-		metricData := metricsData[i]
-
+	for _, metricData := range metricsData {
 		switch metricData.Kind {
 		case model.Gauge:
 			s.gaugeMetrics[metricData.Name] = *metricData.Value
@@ -163,10 +161,9 @@ func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.Metric
 		case model.Counter:
 			s.counterMetrics[metricData.Name] += *metricData.Delta
 			newValue := s.counterMetrics[metricData.Name]
-			metricsData[i].Delta = &newValue
 			logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", metricData.Name, newValue))
 		}
 	}
 
-	return metricsData, nil
+	return nil
 }
