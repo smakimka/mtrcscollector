@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/render"
 
+	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
@@ -31,6 +32,7 @@ func (h UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	err := h.s.UpdateMetrics(ctx, *data)
 	if err != nil {
+		logger.Log.Err(err).Msg("error updating metrics")
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
 		return
