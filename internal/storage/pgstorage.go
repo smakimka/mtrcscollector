@@ -36,7 +36,7 @@ func (s PGStorage) CreateSchemaIFNotExists(ctx context.Context) error {
 	_, err := retry.Exec(s.p.Exec, ctx, `create table if not exists counter_metrics (
 		id serial primary key,
 		name text,
-		value integer
+		value bigint
 	)`)
 	if err != nil {
 		return err
