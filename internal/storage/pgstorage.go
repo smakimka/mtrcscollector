@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/smakimka/mtrcscollector/internal/model"
+	"github.com/smakimka/mtrcscollector/internal/retry"
 )
 
 type PGStorage struct {
@@ -32,7 +33,7 @@ func (s PGStorage) Ping(ctx context.Context) error {
 }
 
 func (s PGStorage) CreateSchemaIFNotExists(ctx context.Context) error {
-	_, err := s.p.Exec(ctx, `create table if not exists counter_metrics (
+	_, err := retry.Exec(s.p.Exec, ctx, `create table if not exists counter_metrics (
 		id serial primary key,
 		name text,
 		value integer
@@ -41,7 +42,7 @@ func (s PGStorage) CreateSchemaIFNotExists(ctx context.Context) error {
 		return err
 	}
 
-	_, err = s.p.Exec(ctx, `create table if not exists gauge_metrics (
+	_, err = retry.Exec(s.p.Exec, ctx, `create table if not exists gauge_metrics (
 		id serial primary key,
 		name text,
 		value double precision
@@ -61,7 +62,7 @@ func (s PGStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetri
 	err := row.Scan(&id, &value)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			_, err := s.p.Exec(ctx, "insert into counter_metrics (name, value) values ($1, $2)", m.Name, m.Value)
+			_, err := retry.Exec(s.p.Exec, ctx, "insert into counter_metrics (name, value) values ($1, $2)", m.Name, m.Value)
 			if err != nil {
 				return 0, err
 			}
@@ -72,7 +73,7 @@ func (s PGStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetri
 	}
 
 	newVal := m.Value + value
-	_, err = s.p.Exec(ctx, "update counter_metrics set value = $1 where id = $2", newVal, id)
+	_, err = retry.Exec(s.p.Exec, ctx, "update counter_metrics set value = $1 where id = $2", newVal, id)
 	if err != nil {
 		return 0, err
 	}
@@ -81,13 +82,13 @@ func (s PGStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetri
 }
 
 func (s PGStorage) UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error {
-	res, err := s.p.Exec(ctx, "update gauge_metrics set value = $1 where name like $2", m.Value, m.Name)
+	res, err := retry.Exec(s.p.Exec, ctx, "update gauge_metrics set value = $1 where name like $2", m.Value, m.Name)
 	if err != nil {
 		return err
 	}
 
 	if res.RowsAffected() == 0 {
-		_, err := s.p.Exec(ctx, "insert into gauge_metrics (name, value) values ($1, $2)", m.Name, m.Value)
+		_, err := retry.Exec(s.p.Exec, ctx, "insert into gauge_metrics (name, value) values ($1, $2)", m.Name, m.Value)
 		if err != nil {
 			return err
 		}
@@ -129,7 +130,7 @@ func (s PGStorage) GetCounterMetric(ctx context.Context, name string) (model.Cou
 }
 
 func (s PGStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric, error) {
-	rows, err := s.p.Query(ctx, "select name, value from gauge_metrics")
+	rows, err := retry.Query(s.p.Query, ctx, "select name, value from gauge_metrics")
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +155,7 @@ func (s PGStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric,
 }
 
 func (s PGStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error) {
-	rows, err := s.p.Query(ctx, "select name, value from counter_metrics")
+	rows, err := retry.Query(s.p.Query, ctx, "select name, value from counter_metrics")
 	if err != nil {
 		return nil, err
 	}
@@ -208,13 +209,13 @@ func (s PGStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsD
 }
 
 func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) error {
-	res, err := tx.Exec(ctx, "update gauge_metrics set value = $1 where name like $2", metricData.Value, metricData.Name)
+	res, err := retry.Exec(tx.Exec, ctx, "update gauge_metrics set value = $1 where name like $2", metricData.Value, metricData.Name)
 	if err != nil {
 		return err
 	}
 
 	if res.RowsAffected() == 0 {
-		_, err := tx.Exec(ctx, "insert into gauge_metrics (name, value) values ($1, $2)", metricData.Name, metricData.Value)
+		_, err := retry.Exec(tx.Exec, ctx, "insert into gauge_metrics (name, value) values ($1, $2)", metricData.Name, metricData.Value)
 		if err != nil {
 			return err
 		}
@@ -231,7 +232,7 @@ func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.Metr
 	err := row.Scan(&id, &value)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			_, err := tx.Exec(ctx, "insert into counter_metrics (name, value) values ($1, $2)", metricData.Name, *metricData.Delta)
+			_, err := retry.Exec(tx.Exec, ctx, "insert into counter_metrics (name, value) values ($1, $2)", metricData.Name, *metricData.Delta)
 			if err != nil {
 				return 0, err
 			}
@@ -242,7 +243,7 @@ func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.Metr
 	}
 
 	newVal := *metricData.Delta + value
-	_, err = tx.Exec(ctx, "update counter_metrics set value = $1 where id = $2", newVal, id)
+	_, err = retry.Exec(tx.Exec, ctx, "update counter_metrics set value = $1 where id = $2", newVal, id)
 	if err != nil {
 		return 0, err
 	}
