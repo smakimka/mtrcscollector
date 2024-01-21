@@ -49,14 +49,7 @@ func getTestUpdatesRouter() chi.Router {
 	return r
 }
 
-type testUpdateMetricsData struct {
-	Name  string  `json:"ID"`
-	Kind  string  `json:"MType"`
-	Value float64 `json:"Value,omitempty"`
-	Delta int64   `json:"Delta,omitempty"`
-}
-
-type testMetricsData []testUpdateMetricsData
+type testMetricsData []testMetricData
 
 func TestUpdatesHandler(t *testing.T) {
 	type want struct {
@@ -71,12 +64,12 @@ func TestUpdatesHandler(t *testing.T) {
 		{
 			name: "two different metrics",
 			body: testMetricsData{
-				testUpdateMetricsData{
+				testMetricData{
 					Name:  "testCounter",
 					Kind:  "counter",
 					Delta: 1,
 				},
-				testUpdateMetricsData{
+				testMetricData{
 					Name:  "testGauge",
 					Kind:  "gauge",
 					Value: 1,
@@ -90,12 +83,12 @@ func TestUpdatesHandler(t *testing.T) {
 		{
 			name: "two counter metrics",
 			body: testMetricsData{
-				testUpdateMetricsData{
+				testMetricData{
 					Name:  "testCounter",
 					Kind:  "counter",
 					Delta: 1,
 				},
-				testUpdateMetricsData{
+				testMetricData{
 					Name:  "testCounter",
 					Kind:  "counter",
 					Delta: 1,
@@ -109,7 +102,7 @@ func TestUpdatesHandler(t *testing.T) {
 		{
 			name: "wrong metric",
 			body: testMetricsData{
-				testUpdateMetricsData{
+				testMetricData{
 					Name:  "wrongType",
 					Kind:  "test",
 					Delta: 1,

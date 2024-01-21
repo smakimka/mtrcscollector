@@ -288,12 +288,12 @@ func TestUpdateMetrics(t *testing.T) {
 		{
 			name: "test counter twice",
 			updates: model.MetricsData{
-				model.UpdatesMetricData{
+				model.MetricData{
 					Name:  "testCounter",
 					Kind:  model.Counter,
 					Delta: new(int64),
 				},
-				model.UpdatesMetricData{
+				model.MetricData{
 					Name:  "testCounter",
 					Kind:  model.Counter,
 					Delta: new(int64),

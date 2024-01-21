@@ -207,7 +207,7 @@ func (s PGStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsD
 	return nil
 }
 
-func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.UpdatesMetricData) error {
+func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) error {
 	res, err := tx.Exec(ctx, "update gauge_metrics set value = $1 where name like $2", metricData.Value, metricData.Name)
 	if err != nil {
 		return err
@@ -223,7 +223,7 @@ func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.Update
 	return nil
 }
 
-func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.UpdatesMetricData) (int64, error) {
+func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) (int64, error) {
 	row := tx.QueryRow(ctx, "select id, value from counter_metrics where name like $1", metricData.Name)
 	var id int16
 	var value int64
