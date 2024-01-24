@@ -63,9 +63,9 @@ func (s PGStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetri
 	}
 	defer tx.Rollback(ctx)
 
-	row := tx.QueryRow(ctx, `insert into counter_metrics (name, value) values ($1, $2) 
-							on conflict on constraint c_name_uq do update set value = value + $2
-							returning value`, m.Name, m.Value)
+	row := tx.QueryRow(ctx, `insert into counter_metrics as cm (name, value) values ($1, $2) 
+							on conflict on constraint c_name_uq do update set value = cm.value + $2
+							returning cm.value`, m.Name, m.Value)
 
 	var value int64
 	err = row.Scan(&value)
