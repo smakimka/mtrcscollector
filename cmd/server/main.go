@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/server/config"
 	"github.com/smakimka/mtrcscollector/internal/server/router"
