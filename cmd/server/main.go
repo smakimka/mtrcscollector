@@ -10,6 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/smakimka/mtrcscollector/internal/auth"
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/server/config"
 	"github.com/smakimka/mtrcscollector/internal/server/router"
@@ -47,6 +48,10 @@ func run(cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if cfg.Key != "" {
+		auth.Init(cfg.Key)
 	}
 
 	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))

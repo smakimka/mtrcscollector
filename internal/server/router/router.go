@@ -19,11 +19,12 @@ func GetRouter(s storage.Storage) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+	r.Use(middleware.Auth)
+	r.Use(middleware.Gzip)
 
 	r.Get("/ping", pingHandler.ServeHTTP)
 
 	r.Route("/", func(r chi.Router) {
-		r.Use(middleware.Gzip)
 		r.Get("/", getAllMetricsHandler.ServeHTTP)
 		r.Post("/update/", updateHandler.ServeHTTP)
 		r.Post("/updates/", updatesHandler.ServeHTTP)

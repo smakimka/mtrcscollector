@@ -31,6 +31,7 @@ func testGzipRequest(t *testing.T, ts *httptest.Server, encoding,
 	req, err := http.NewRequest("POST", ts.URL+path, body)
 	require.NoError(t, err)
 	if encoding != "" {
+		req.Header.Set("Content-Encoding", "gzip")
 		req.Header.Set("Accept-Encoding", encoding)
 	}
 

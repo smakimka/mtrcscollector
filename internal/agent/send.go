@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-resty/resty/v2"
 
 	"github.com/smakimka/mtrcscollector/internal/agent/config"
+	"github.com/smakimka/mtrcscollector/internal/auth"
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
@@ -102,11 +104,18 @@ func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Clie
 	zw.Write(body)
 	zw.Close()
 
-	// Можно просто SetBody со структурой, которая сюда передается, но надо чтобы в импортах был хоть где-то json, будет тут
-	resp, err := client.R().
+	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
-		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("Accept-Encoding", "gzip")
+
+	if auth.Enabled() {
+		sign := auth.Sign(zipBody.Bytes())
+		req.SetHeader("HashSHA256", hex.EncodeToString(sign))
+	}
+
+	// Можно просто SetBody со структурой, которая сюда передается, но надо чтобы в импортах был хоть где-то json, будет тут
+	resp, err := req.
 		SetBody(zipBody).
 		Post("/updates/")
 
