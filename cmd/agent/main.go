@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"time"
@@ -23,16 +24,17 @@ func main() {
 	client := resty.New()
 	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
 
+	ctx := context.Background()
 	// инициализация метрик
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
-	agent.UpdateMetrics(&m, s)
-	s.UpdateGaugeMetric(model.GaugeMetric{Name: "LastPollCount", Value: 0})
+	agent.UpdateMetrics(ctx, &m, s)
+	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "LastPollCount", Value: 0})
 
-	run(cfg, s, client)
+	run(ctx, cfg, s, client)
 }
 
-func run(cfg *config.Config, s storage.Storage, client *resty.Client) {
+func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client) {
 	pollTicker := time.NewTicker(cfg.PollInterval)
 	defer pollTicker.Stop()
 	reportTicker := time.NewTicker(cfg.ReportInterval)
@@ -43,12 +45,11 @@ func run(cfg *config.Config, s storage.Storage, client *resty.Client) {
 	for {
 		select {
 		case <-pollTicker.C:
-			go agent.CollectMetrics(cfg, s)
+			go agent.CollectMetrics(ctx, cfg, s)
 		case <-reportTicker.C:
-			go agent.SendMetrics(cfg, s, client, errChan)
+			go agent.SendMetrics(ctx, cfg, s, client, errChan)
 		case err := <-errChan:
 			fmt.Println(err)
-			//panic(err)
 		}
 	}
 }

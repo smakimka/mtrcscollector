@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -20,6 +21,9 @@ func NewUpdateMetricHandler(s storage.Storage) UpdateMetricHandler {
 }
 
 func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
 	switch chi.URLParam(r, "metricKind") {
 	case model.Gauge:
 		value, err := strconv.ParseFloat(chi.URLParam(r, "metricValue"), 64)
@@ -29,7 +33,7 @@ func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err = h.s.UpdateGaugeMetric(model.GaugeMetric{
+		err = h.s.UpdateGaugeMetric(ctx, model.GaugeMetric{
 			Name:  chi.URLParam(r, "metricName"),
 			Value: value,
 		})
@@ -51,7 +55,7 @@ func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = h.s.UpdateCounterMetric(model.CounterMetric{
+		_, err = h.s.UpdateCounterMetric(ctx, model.CounterMetric{
 			Name:  chi.URLParam(r, "metricName"),
 			Value: value,
 		})
@@ -76,7 +80,10 @@ func NewUpdateHandler(s storage.Storage) UpdateHandler {
 }
 
 func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	data := &model.MetricsData{}
+	ctx, cancel := context.WithCancel(r.Context())
+	defer cancel()
+
+	data := &model.MetricData{}
 	if err := render.Bind(r, data); err != nil {
 		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, model.Response{Ok: false, Detail: err.Error()})
@@ -91,7 +98,7 @@ func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		err := h.s.UpdateGaugeMetric(model.GaugeMetric{
+		err := h.s.UpdateGaugeMetric(ctx, model.GaugeMetric{
 			Name:  data.Name,
 			Value: *data.Value,
 		})
@@ -107,7 +114,7 @@ func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		newVal, err := h.s.UpdateCounterMetric(model.CounterMetric{
+		newVal, err := h.s.UpdateCounterMetric(ctx, model.CounterMetric{
 			Name:  data.Name,
 			Value: *data.Delta,
 		})

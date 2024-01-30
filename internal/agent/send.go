@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,70 +16,85 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func SendMetrics(cfg *config.Config, s storage.Storage, client *resty.Client, c chan error) {
-	gaugeMetrics, err := s.GetAllGaugeMetrics()
+func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client, c chan error) {
+	gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 	if err != nil {
 		c <- err
 		return
 	}
 
-	counterMetrics, err := s.GetAllCounterMetrics()
+	counterMetrics, err := s.GetAllCounterMetrics(ctx)
 	if err != nil {
 		c <- err
 		return
 	}
 
-	for _, gaugeMetric := range gaugeMetrics {
-		go sendGaugeMetric(s, client, gaugeMetric, c)
-	}
+	metricsData := model.MetricsData{}
 
-	for _, counterMetric := range counterMetrics {
-		if counterMetric.Name == "PollCount" {
-			go sendPollCount(s, client, counterMetric, c)
+	for i := range gaugeMetrics {
+		if gaugeMetrics[i].Name == "LastPollCount" {
 			continue
 		}
-		go sendCounterMetric(s, client, counterMetric, c)
+
+		metricsData = append(metricsData, model.MetricData{
+			Name:  gaugeMetrics[i].Name,
+			Kind:  model.Gauge,
+			Value: &gaugeMetrics[i].Value,
+		})
+	}
+
+	for i := range counterMetrics {
+		if counterMetrics[i].Name == "PollCount" {
+			pollCountData, err := getPollCountData(ctx, s, counterMetrics[i])
+			if err != nil {
+				c <- err
+				return
+			}
+			metricsData = append(metricsData, pollCountData)
+			continue
+		}
+		metricsData = append(metricsData, model.MetricData{
+			Name:  counterMetrics[i].Name,
+			Kind:  model.Counter,
+			Delta: &counterMetrics[i].Value,
+		})
+	}
+
+	logger.Log.Debug().Msg(fmt.Sprintf("sending update metrics request (%s)", fmt.Sprint(metricsData)))
+	if err = sendRequest(ctx, metricsData, client, c); err != nil {
+		c <- err
 	}
 }
 
-func sendPollCount(s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
-	pollCount, err := s.GetCounterMetric("PollCount")
+func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMetric) (model.MetricData, error) {
+	data := model.MetricData{}
+
+	pollCount, err := s.GetCounterMetric(ctx, "PollCount")
 	if err != nil {
-		c <- err
-		return
+		return data, err
 	}
 
-	lastPollCount, err := s.GetGaugeMetric("LastPollCount")
+	lastPollCount, err := s.GetGaugeMetric(ctx, "LastPollCount")
 	if err != nil {
-		c <- err
-		return
+		return data, err
 	}
 	inc := pollCount.Value - int64(lastPollCount.Value)
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &inc}
 
-	s.UpdateGaugeMetric(model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)})
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update poll count request (%s)", fmt.Sprint(reqData)))
+	if err = s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "LastPollCount", Value: float64(pollCount.Value)}); err != nil {
+		return data, err
+	}
 
-	sendRequest(reqData, client, c)
+	return model.MetricData{
+		Name:  m.Name,
+		Kind:  model.Counter,
+		Delta: &inc,
+	}, nil
 }
 
-func sendGaugeMetric(s storage.Storage, client *resty.Client, m model.GaugeMetric, c chan error) {
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Value: &m.Value}
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update gauge metric request (%s)", fmt.Sprint(reqData)))
-	sendRequest(reqData, client, c)
-}
-
-func sendCounterMetric(s storage.Storage, client *resty.Client, m model.CounterMetric, c chan error) {
-	reqData := &model.MetricsData{Name: m.Name, Kind: m.GetType(), Delta: &m.Value}
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update counter metric request (%s)", fmt.Sprint(reqData)))
-	sendRequest(reqData, client, c)
-}
-
-func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
+func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Client, c chan error) error {
 	body, err := json.Marshal(data)
 	if err != nil {
-		c <- err
-		return
+		return err
 	}
 
 	zipBody := bytes.NewBuffer([]byte{})
@@ -92,14 +108,15 @@ func sendRequest(data *model.MetricsData, client *resty.Client, c chan error) {
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Accept-Encoding", "gzip").
 		SetBody(zipBody).
-		Post("/update/")
+		Post("/updates/")
 
 	if err != nil {
-		c <- err
-		return
+		return err
 	}
 
 	if resp.StatusCode() != http.StatusOK {
 		logger.Log.Warn().Msg(fmt.Sprintf("got not ok status (%d)", resp.StatusCode()))
 	}
+
+	return nil
 }

@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"errors"
 
 	"github.com/smakimka/mtrcscollector/internal/model"
@@ -10,16 +11,26 @@ var (
 	ErrNoSuchMetric = errors.New("no such metric")
 )
 
+type Updater interface {
+	UpdateCounterMetric(ctx context.Context, m model.CounterMetric) (int64, error)
+	UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error
+	UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error
+}
+
+type Getter interface {
+	GetGaugeMetric(ctx context.Context, name string) (model.GaugeMetric, error)
+	GetCounterMetric(ctx context.Context, name string) (model.CounterMetric, error)
+	GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric, error)
+	GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error)
+}
+
 type Storage interface {
-	UpdateCounterMetric(m model.CounterMetric) (int64, error)
-	UpdateGaugeMetric(m model.GaugeMetric) error
+	Updater
+	Getter
+}
 
-	GetGaugeMetric(name string) (model.GaugeMetric, error)
-	GetCounterMetric(name string) (model.CounterMetric, error)
-
-	GetAllGaugeMetrics() ([]model.GaugeMetric, error)
-	GetAllCounterMetrics() ([]model.CounterMetric, error)
-
+type SyncStorage interface {
+	Storage
 	Restore(filePath string) error
 	Save(filePath string) error
 }

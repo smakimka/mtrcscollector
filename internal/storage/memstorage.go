@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -75,7 +76,7 @@ func (s *MemStorage) Restore(filePath string) error {
 	return nil
 }
 
-func (s *MemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
+func (s *MemStorage) GetGaugeMetric(ctx context.Context, name string) (model.GaugeMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -87,7 +88,7 @@ func (s *MemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
 	return model.GaugeMetric{}, ErrNoSuchMetric
 }
 
-func (s *MemStorage) GetCounterMetric(name string) (model.CounterMetric, error) {
+func (s *MemStorage) GetCounterMetric(ctx context.Context, name string) (model.CounterMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -99,7 +100,7 @@ func (s *MemStorage) GetCounterMetric(name string) (model.CounterMetric, error) 
 	return model.CounterMetric{}, ErrNoSuchMetric
 }
 
-func (s *MemStorage) GetAllGaugeMetrics() ([]model.GaugeMetric, error) {
+func (s *MemStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -114,7 +115,7 @@ func (s *MemStorage) GetAllGaugeMetrics() ([]model.GaugeMetric, error) {
 	return metrics, nil
 }
 
-func (s *MemStorage) GetAllCounterMetrics() ([]model.CounterMetric, error) {
+func (s *MemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -129,7 +130,7 @@ func (s *MemStorage) GetAllCounterMetrics() ([]model.CounterMetric, error) {
 	return metrics, nil
 }
 
-func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
+func (s *MemStorage) UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -139,11 +140,30 @@ func (s *MemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
 	return nil
 }
 
-func (s *MemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, error) {
+func (s *MemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetric) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.counterMetrics[m.Name] += m.Value
 	logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", m.Name, s.counterMetrics[m.Name]))
 	return s.counterMetrics[m.Name], nil
+}
+
+func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	for _, metricData := range metricsData {
+		switch metricData.Kind {
+		case model.Gauge:
+			s.gaugeMetrics[metricData.Name] = *metricData.Value
+			logger.Log.Debug().Msg(fmt.Sprintf("updated gauge metric \"%s\" to %f", metricData.Name, *metricData.Value))
+		case model.Counter:
+			s.counterMetrics[metricData.Name] += *metricData.Delta
+			newValue := s.counterMetrics[metricData.Name]
+			logger.Log.Debug().Msg(fmt.Sprintf("updated counter metric \"%s\" to %d", metricData.Name, newValue))
+		}
+	}
+
+	return nil
 }

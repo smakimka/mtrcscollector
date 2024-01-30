@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -41,7 +42,7 @@ func getTestValueRouter() chi.Router {
 	logger.SetLevel(logger.Debug)
 	s := storage.NewMemStorage()
 
-	s.UpdateGaugeMetric(model.GaugeMetric{Name: "test", Value: 1.5})
+	s.UpdateGaugeMetric(context.Background(), model.GaugeMetric{Name: "test", Value: 1.5})
 
 	getMetricValueHandler := GetMetricValueHandler{s}
 	valueHandler := ValueHandler{s}
@@ -111,12 +112,12 @@ func TestValueHandler(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		body testMetricsData
+		body testMetricData
 		want want
 	}{
 		{
 			name: "positive test #1",
-			body: testMetricsData{Name: "test", Kind: "gauge"},
+			body: testMetricData{Name: "test", Kind: "gauge"},
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
@@ -125,7 +126,7 @@ func TestValueHandler(t *testing.T) {
 		},
 		{
 			name: "negative test #1",
-			body: testMetricsData{Name: "test", Kind: "counter"},
+			body: testMetricData{Name: "test", Kind: "counter"},
 			want: want{
 				code:        http.StatusNotFound,
 				contentType: "application/json",

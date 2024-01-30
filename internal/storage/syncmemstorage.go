@@ -1,6 +1,10 @@
 package storage
 
-import "github.com/smakimka/mtrcscollector/internal/model"
+import (
+	"context"
+
+	"github.com/smakimka/mtrcscollector/internal/model"
+)
 
 type SyncMemStorage struct {
 	syncFile string
@@ -22,8 +26,8 @@ func (s *SyncMemStorage) Save(filePath string) error {
 	return s.s.Save(filePath)
 }
 
-func (s *SyncMemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, error) {
-	res, err := s.s.UpdateCounterMetric(m)
+func (s *SyncMemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetric) (int64, error) {
+	res, err := s.s.UpdateCounterMetric(ctx, m)
 	if err != nil {
 		return 0, err
 	}
@@ -35,8 +39,8 @@ func (s *SyncMemStorage) UpdateCounterMetric(m model.CounterMetric) (int64, erro
 	return res, nil
 }
 
-func (s *SyncMemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
-	err := s.s.UpdateGaugeMetric(m)
+func (s *SyncMemStorage) UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error {
+	err := s.s.UpdateGaugeMetric(ctx, m)
 	if err != nil {
 		return err
 	}
@@ -44,18 +48,31 @@ func (s *SyncMemStorage) UpdateGaugeMetric(m model.GaugeMetric) error {
 	return s.s.Save(s.syncFile)
 }
 
-func (s *SyncMemStorage) GetGaugeMetric(name string) (model.GaugeMetric, error) {
-	return s.s.GetGaugeMetric(name)
+func (s *SyncMemStorage) GetGaugeMetric(ctx context.Context, name string) (model.GaugeMetric, error) {
+	return s.s.GetGaugeMetric(ctx, name)
 }
 
-func (s *SyncMemStorage) GetCounterMetric(name string) (model.CounterMetric, error) {
-	return s.s.GetCounterMetric(name)
+func (s *SyncMemStorage) GetCounterMetric(ctx context.Context, name string) (model.CounterMetric, error) {
+	return s.s.GetCounterMetric(ctx, name)
 }
 
-func (s *SyncMemStorage) GetAllGaugeMetrics() ([]model.GaugeMetric, error) {
-	return s.s.GetAllGaugeMetrics()
+func (s *SyncMemStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric, error) {
+	return s.s.GetAllGaugeMetrics(ctx)
 }
 
-func (s *SyncMemStorage) GetAllCounterMetrics() ([]model.CounterMetric, error) {
-	return s.s.GetAllCounterMetrics()
+func (s *SyncMemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error) {
+	return s.s.GetAllCounterMetrics(ctx)
+}
+
+func (s *SyncMemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error {
+	err := s.s.UpdateMetrics(ctx, metricsData)
+	if err != nil {
+		return err
+	}
+
+	if err = s.s.Save(s.syncFile); err != nil {
+		return err
+	}
+
+	return err
 }

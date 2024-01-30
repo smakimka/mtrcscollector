@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"runtime"
 	"testing"
 
@@ -36,6 +37,7 @@ func TestUpdateMetrics(t *testing.T) {
 	}
 
 	logger.SetLevel(logger.Debug)
+	ctx := context.Background()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -44,17 +46,17 @@ func TestUpdateMetrics(t *testing.T) {
 			for i := 0; i < test.callTimes; i++ {
 				m := runtime.MemStats{}
 				runtime.ReadMemStats(&m)
-				UpdateMetrics(&m, s)
+				UpdateMetrics(ctx, &m, s)
 
-				gaugeMetrics, err := s.GetAllGaugeMetrics()
+				gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 				assert.NoError(t, err)
-				counterMetrics, err := s.GetAllCounterMetrics()
+				counterMetrics, err := s.GetAllCounterMetrics(ctx)
 				assert.NoError(t, err)
 				assert.Equal(t, test.wantGaugeLength, len(gaugeMetrics))
 				assert.Equal(t, test.wantCounterLength, len(counterMetrics))
 			}
 
-			pollCount, err := s.GetCounterMetric("PollCount")
+			pollCount, err := s.GetCounterMetric(ctx, "PollCount")
 			require.NoError(t, err)
 			assert.Equal(t, int64(test.wantPollCountValue), pollCount.GetValue())
 		})

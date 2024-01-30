@@ -14,14 +14,19 @@ func GetRouter(s storage.Storage) chi.Router {
 	getMetricValueHandler := handlers.NewGetMetricValueHandler(s)
 	updateHandler := handlers.NewUpdateHandler(s)
 	valueHandler := handlers.NewValueHandler(s)
+	pingHandler := handlers.NewPingHandler(s)
+	updatesHandler := handlers.NewUpdatesHandler(s)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+
+	r.Get("/ping", pingHandler.ServeHTTP)
 
 	r.Route("/", func(r chi.Router) {
 		r.Use(middleware.Gzip)
 		r.Get("/", getAllMetricsHandler.ServeHTTP)
 		r.Post("/update/", updateHandler.ServeHTTP)
+		r.Post("/updates/", updatesHandler.ServeHTTP)
 		r.Post("/value/", valueHandler.ServeHTTP)
 	})
 
