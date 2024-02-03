@@ -40,15 +40,21 @@ func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *res
 	reportTicker := time.NewTicker(cfg.ReportInterval)
 	defer reportTicker.Stop()
 
-	errChan := make(chan error)
+	jobs := make(chan model.MetricsData, cfg.RateLimit)
+	errs := make(chan error)
+
+	for i := 0; i < cfg.RateLimit; i++ {
+		go agent.Worker(ctx, client, i+1, jobs, errs)
+	}
 
 	for {
 		select {
 		case <-pollTicker.C:
-			go agent.CollectMetrics(ctx, cfg, s)
+			go agent.CollectMetrics(ctx, s)
+			go agent.CollectPSutilMetrics(ctx, s, errs)
 		case <-reportTicker.C:
-			go agent.SendMetrics(ctx, cfg, s, client, errChan)
-		case err := <-errChan:
+			go agent.SendMetrics(ctx, cfg, s, jobs, errs)
+		case err := <-errs:
 			fmt.Println(err)
 		}
 	}

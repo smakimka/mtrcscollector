@@ -5,12 +5,13 @@ import (
 	"math/rand"
 	"runtime"
 
-	"github.com/smakimka/mtrcscollector/internal/agent/config"
+	"github.com/shirou/gopsutil/v3/mem"
+
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func CollectMetrics(ctx context.Context, cfg *config.Config, s storage.Storage) {
+func CollectMetrics(ctx context.Context, s storage.Storage) {
 	m := runtime.MemStats{}
 	runtime.ReadMemStats(&m)
 
@@ -48,4 +49,16 @@ func UpdateMetrics(ctx context.Context, m *runtime.MemStats, s storage.Storage) 
 
 	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "RandomValue", Value: rand.Float64()})
 	s.UpdateCounterMetric(ctx, model.CounterMetric{Name: "PollCount", Value: 1})
+}
+
+func CollectPSutilMetrics(ctx context.Context, s storage.Storage, errs chan<- error) {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		errs <- err
+		return
+	}
+
+	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "TotalMemory", Value: float64(v.Total)})
+	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "FreeMemory", Value: float64(v.Free)})
+	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "CPUutilization1", Value: float64(v.UsedPercent)})
 }
