@@ -16,16 +16,28 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client, c chan error) {
+func Worker(ctx context.Context, client *resty.Client, id int, jobs <-chan model.MetricsData, errs chan<- error) {
+	for metricsData := range jobs {
+		logger.Log.Debug().Msg(fmt.Sprintf("worker %d started work", id))
+
+		err := sendRequest(ctx, metricsData, client)
+		if err != nil {
+			errs <- err
+		}
+		logger.Log.Debug().Msg(fmt.Sprintf("worker %d finished work", id))
+	}
+}
+
+func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, jobs chan<- model.MetricsData, errs chan<- error) {
 	gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 	if err != nil {
-		c <- err
+		errs <- err
 		return
 	}
 
 	counterMetrics, err := s.GetAllCounterMetrics(ctx)
 	if err != nil {
-		c <- err
+		errs <- err
 		return
 	}
 
@@ -47,7 +59,7 @@ func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, cli
 		if counterMetrics[i].Name == "PollCount" {
 			pollCountData, err := getPollCountData(ctx, s, counterMetrics[i])
 			if err != nil {
-				c <- err
+				errs <- err
 				return
 			}
 			metricsData = append(metricsData, pollCountData)
@@ -60,10 +72,8 @@ func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, cli
 		})
 	}
 
-	logger.Log.Debug().Msg(fmt.Sprintf("sending update metrics request (%s)", fmt.Sprint(metricsData)))
-	if err = sendRequest(ctx, metricsData, client, c); err != nil {
-		c <- err
-	}
+	logger.Log.Debug().Msg("sending job to workers")
+	jobs <- metricsData
 }
 
 func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMetric) (model.MetricData, error) {
@@ -91,7 +101,7 @@ func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMet
 	}, nil
 }
 
-func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Client, c chan error) error {
+func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Client) error {
 	body, err := json.Marshal(data)
 	if err != nil {
 		return err
