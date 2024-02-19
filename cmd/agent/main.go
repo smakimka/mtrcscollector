@@ -10,6 +10,7 @@ import (
 
 	"github.com/smakimka/mtrcscollector/internal/agent"
 	"github.com/smakimka/mtrcscollector/internal/agent/config"
+	"github.com/smakimka/mtrcscollector/internal/auth"
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
@@ -18,6 +19,10 @@ import (
 func main() {
 	cfg := config.NewConfig()
 	logger.SetLevel(logger.Info)
+
+	if cfg.Key != "" {
+		auth.Init(cfg.Key)
+	}
 
 	s := storage.NewMemStorage()
 

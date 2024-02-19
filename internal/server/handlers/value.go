@@ -22,7 +22,6 @@ func NewGetMetricValueHandler(s storage.Storage) GetMetricValueHandler {
 func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
-
 	switch chi.URLParam(r, "metricKind") {
 	case model.Gauge:
 		metric, err := h.s.GetGaugeMetric(ctx, chi.URLParam(r, "metricName"))

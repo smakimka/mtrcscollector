@@ -13,6 +13,7 @@ type Config struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	Restore         bool   `env:"RESTORE"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	Key             string `env:"KEY"`
 }
 
 func NewConfig() *Config {
@@ -25,12 +26,14 @@ func parseFlags() *Config {
 	var flagStoragePath string
 	var flagRestore bool
 	var flagDatabaseDSN string
+	var flagKey string
 
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "host:port to run on")
 	flag.IntVar(&flagStoreInterval, "i", 300, "state save interval (in seconds)")
 	flag.StringVar(&flagStoragePath, "f", "/tmp/metrics-db.json", "temp file to save state to (if emtpy no saves are done)")
 	flag.BoolVar(&flagRestore, "r", true, "load with saved data or not")
 	flag.StringVar(&flagDatabaseDSN, "d", "", "database dsn string")
+	flag.StringVar(&flagKey, "k", "", "auth key string")
 
 	flag.Parse()
 
@@ -58,6 +61,10 @@ func parseFlags() *Config {
 
 	if os.Getenv("DATABASE_DSN") == "" {
 		cfg.DatabaseDSN = flagDatabaseDSN
+	}
+
+	if os.Getenv("KEY") == "" {
+		cfg.Key = flagKey
 	}
 
 	return cfg
