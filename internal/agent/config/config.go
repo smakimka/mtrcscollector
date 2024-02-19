@@ -11,6 +11,7 @@ type Config struct {
 	Addr           string
 	ReportInterval time.Duration
 	PollInterval   time.Duration
+	RateLimit      int
 	Key            string
 }
 
@@ -18,6 +19,7 @@ type EnvParams struct {
 	Addr           string `env:"ADDRESS"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
+	RateLimit      int    `env:"RATE_LIMIT"`
 	Key            string `env:"KEY"`
 }
 
@@ -29,6 +31,7 @@ func parseFlags() *Config {
 	var serverAddr string
 	var flagReportInterval int
 	var flagPollInteraval int
+	var rateLimit int
 	var flagKey string
 
 	flag.StringVar(&serverAddr, "a", "localhost:8080", "server addres without http://")
@@ -64,6 +67,12 @@ func parseFlags() *Config {
 		cfg.ReportInterval = reportInterval
 	} else {
 		cfg.ReportInterval = time.Duration(envParams.ReportInterval) * time.Second
+	}
+
+	if envParams.RateLimit == 0 {
+		cfg.RateLimit = rateLimit
+	} else {
+		cfg.RateLimit = envParams.RateLimit
 	}
 
 	if envParams.Key == "" {
