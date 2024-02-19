@@ -42,6 +42,8 @@ func parseFlags() *Config {
 	pollInteraval := time.Duration(flagPollInteraval) * time.Second
 	flag.StringVar(&flagKey, "k", "", "auth key string")
 
+	flag.IntVar(&rateLimit, "l", 1, "number of max concurrent request")
+
 	flag.Parse()
 
 	cfg := &Config{}
