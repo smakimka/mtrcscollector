@@ -8,7 +8,10 @@ import (
 )
 
 var (
-	ErrNoSuchMetric = errors.New("no such metric")
+	ErrNoSuchMetric             = errors.New("no such metric")
+	_               Storage     = (*MemStorage)(nil)
+	_               Storage     = (*PGStorage)(nil)
+	_               SyncStorage = (*SyncMemStorage)(nil)
 )
 
 type Updater interface {
