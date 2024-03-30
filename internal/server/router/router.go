@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http/pprof"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/smakimka/mtrcscollector/internal/server/handlers"
@@ -25,6 +27,19 @@ func GetRouter(s storage.Storage) chi.Router {
 	r.Get("/ping", pingHandler.ServeHTTP)
 
 	r.Route("/", func(r chi.Router) {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline/", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile/", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol/", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace/", pprof.Trace)
+
+		r.Handle("/debug/pprof/allocs/", pprof.Handler("allocs"))
+		r.Handle("/debug/pprof/block/", pprof.Handler("block"))
+		r.Handle("/debug/pprof/goroutine/", pprof.Handler("goroutine"))
+		r.Handle("/debug/pprof/heap/", pprof.Handler("heap"))
+		r.Handle("/debug/pprof/mutex/", pprof.Handler("mutex"))
+		r.Handle("/debug/pprof/threadcreate/", pprof.Handler("threadcreate"))
+
 		r.Get("/", getAllMetricsHandler.ServeHTTP)
 		r.Post("/update/", updateHandler.ServeHTTP)
 		r.Post("/updates/", updatesHandler.ServeHTTP)
