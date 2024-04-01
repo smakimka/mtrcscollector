@@ -10,6 +10,21 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
+// @Title mtrcscollector API
+// @Description Серви для сбора метрик.
+// @Version 1.0
+
+// @BasePath /
+
+// @Tag.name Get
+// @Tag.description "Группа запросов получения метрик"
+
+// @Tag.name Update
+// @Tag.description "Группа запросов обновления метрик"
+
+// @Tag.name Status
+// @Tag.description "Группа запросов статуса сервиса"
+
 func GetRouter(s storage.Storage) chi.Router {
 	getAllMetricsHandler := handlers.NewGetAllMetricsHandler(s)
 	updateMetricHandler := handlers.NewUpdateMetricHandler(s)

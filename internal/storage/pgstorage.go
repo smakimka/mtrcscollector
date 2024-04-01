@@ -11,6 +11,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/retry"
 )
 
+// Реализация интерфейса storage для БД postgres
 type PGStorage struct {
 	p *pgxpool.Pool
 }
@@ -28,10 +29,12 @@ func NewPGStorage(ctx context.Context, p *pgxpool.Pool) (PGStorage, error) {
 	return s, nil
 }
 
+// Проверка соединения
 func (s PGStorage) Ping(ctx context.Context) error {
 	return s.p.Ping(ctx)
 }
 
+// Создание БД при первом подключении, исполняется всегда при запуске сервиса
 func (s PGStorage) CreateSchemaIfNotExists(ctx context.Context) error {
 	_, err := retry.Exec(s.p.Exec, ctx, `create table if not exists counter_metrics (
 		id serial primary key,
@@ -211,6 +214,7 @@ func (s PGStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsD
 	return nil
 }
 
+// Обновить gauge метрику в рамках транзакции
 func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) error {
 	_, err := retry.Exec(tx.Exec, ctx, `insert into gauge_metrics (name, value) values ($1, $2) 
 										  on conflict on constraint g_name_uq do update set value = $2`, metricData.Name, metricData.Value)
@@ -221,6 +225,7 @@ func txUpdateGaugeMetric(ctx context.Context, tx pgx.Tx, metricData model.Metric
 	return nil
 }
 
+// Обновить counter метрику в рамках транзакции
 func txUpdateCounterMetric(ctx context.Context, tx pgx.Tx, metricData model.MetricData) (int64, error) {
 	row := tx.QueryRow(ctx, `insert into counter_metrics as cm (name, value) values ($1, $2) 
 							on conflict on constraint c_name_uq do update set value = cm.value + $2

@@ -17,6 +17,15 @@ func NewPingHandler(s storage.Storage) PingHandler {
 	}
 }
 
+// Ping godoc
+// @Tags Status
+// @Summary Запрос для проверки соединения с БД
+// @ID Ping
+// @Accept  plain
+// @Produce plain
+// @Success 200 {string} string ""
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router /ping [get]
 func (h PingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

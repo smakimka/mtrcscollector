@@ -13,6 +13,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
+// Реализация интерфейса storage для хранения данных в памяти (в 2 хешмапах)
 type MemStorage struct {
 	mutex          sync.RWMutex
 	gaugeMetrics   map[string]float64
@@ -33,6 +34,7 @@ type SaveData struct {
 	CounterMetrics map[string]int64   `json:"counter_metrics"`
 }
 
+// Функиця для сохранения данных в файл
 func (s *MemStorage) Save(filePath string) error {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -52,6 +54,7 @@ func (s *MemStorage) Save(filePath string) error {
 	return nil
 }
 
+// Функиця для восстановления данных из файла
 func (s *MemStorage) Restore(filePath string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -76,6 +79,7 @@ func (s *MemStorage) Restore(filePath string) error {
 	return nil
 }
 
+// Получение gauge метрики по имени
 func (s *MemStorage) GetGaugeMetric(ctx context.Context, name string) (model.GaugeMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -88,6 +92,7 @@ func (s *MemStorage) GetGaugeMetric(ctx context.Context, name string) (model.Gau
 	return model.GaugeMetric{}, ErrNoSuchMetric
 }
 
+// Получение counter метрики по имени
 func (s *MemStorage) GetCounterMetric(ctx context.Context, name string) (model.CounterMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -100,6 +105,7 @@ func (s *MemStorage) GetCounterMetric(ctx context.Context, name string) (model.C
 	return model.CounterMetric{}, ErrNoSuchMetric
 }
 
+// Получение всех gauge метрик
 func (s *MemStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -115,6 +121,7 @@ func (s *MemStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetri
 	return metrics, nil
 }
 
+// Получение всех counter метрик
 func (s *MemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -130,6 +137,7 @@ func (s *MemStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterM
 	return metrics, nil
 }
 
+// Обновить gauge метрику по имени, значение будет перезаписано
 func (s *MemStorage) UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -140,6 +148,7 @@ func (s *MemStorage) UpdateGaugeMetric(ctx context.Context, m model.GaugeMetric)
 	return nil
 }
 
+// Обновить counter метрику по имени, значение будет добавлено к текущему или к 0
 func (s *MemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMetric) (int64, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -149,6 +158,7 @@ func (s *MemStorage) UpdateCounterMetric(ctx context.Context, m model.CounterMet
 	return s.counterMetrics[m.Name], nil
 }
 
+// Выполнить соответствующий update по всем метрикам по порядку
 func (s *MemStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsData) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

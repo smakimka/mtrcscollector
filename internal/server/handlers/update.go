@@ -20,6 +20,19 @@ func NewUpdateMetricHandler(s storage.Storage) UpdateMetricHandler {
 	return UpdateMetricHandler{s: s}
 }
 
+// UpdateOld godoc
+// @Tags Update
+// @Summary Запрос для обновления метрики
+// @ID UpdateOld
+// @Accept  plain
+// @Produce plain
+// @Param metricKind path string true "Тип метрики для обновления"
+// @Param metricName path string true "имя метрики"
+// @Param metricValue path string true "Значение метрики"
+// @Success 200 {string} string "20"
+// @Failure 400 {string} string "ошибка"
+// @Failure 500 {object} string "ошибка"
+// @Router /update/{metricKind}/{metricName}/{metricValue} [post]
 func (h UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -79,6 +92,16 @@ func NewUpdateHandler(s storage.Storage) UpdateHandler {
 	return UpdateHandler{s: s}
 }
 
+// Update godoc
+// @Tags Update
+// @Summary Запрос для обновления метрики
+// @ID Update
+// @Accept  json
+// @Produce json
+// @Param metric body model.MetricData true "Метрика для обновления"
+// @Success 200 {object} model.MetricData
+// @Failure 500 {object} model.Response
+// @Router /update/ [post]
 func (h UpdateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
