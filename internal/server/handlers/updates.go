@@ -19,6 +19,17 @@ func NewUpdatesHandler(s storage.Storage) UpdatesHandler {
 	return UpdatesHandler{s: s}
 }
 
+// Updates godoc
+// @Tags Update
+// @Summary Запрос для обновления метрики
+// @ID Updates
+// @Accept  json
+// @Produce json
+// @Param metric body model.MetricsData true "Метрики для обновления"
+// @Success 200 {object} model.Response
+// @Failure 500 {object} model.Response
+// @Failure 400 {object} model.Response
+// @Router /updates/ [post]
 func (h UpdatesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

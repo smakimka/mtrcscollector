@@ -19,6 +19,18 @@ func NewGetMetricValueHandler(s storage.Storage) GetMetricValueHandler {
 	return GetMetricValueHandler{s: s}
 }
 
+// GetMetricValue godoc
+// @Tags Get
+// @Summary Запрос для получения метрики
+// @ID GetMetricValue
+// @Accept  plain
+// @Produce plain
+// @Param metricKind path string true "Тип метрики для обновления"
+// @Param metricName path string true "имя метрики"
+// @Success 200 {string} string "20"
+// @Failure 500 {string} string "ошибка"
+// @Failure 404 {string} string ""
+// @Router /value/{metricKind}/{metricName} [get]
 func (h GetMetricValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
@@ -68,6 +80,17 @@ func NewValueHandler(s storage.Storage) ValueHandler {
 	return ValueHandler{s: s}
 }
 
+// Value godoc
+// @Tags Get
+// @Summary Запрос для получения метрики
+// @ID Value
+// @Accept  json
+// @Produce json
+// @Param metric body model.MetricData true "Метрика для обновления"
+// @Success 200 {object} model.MetricData
+// @Failure 400 {object} model.Response
+// @Failure 500 {object} model.Response
+// @Router /value/ [get]
 func (h ValueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

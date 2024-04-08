@@ -6,6 +6,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
+// Реализация интерфейса storage для памяти с сохранением данных после каждой записи, использует MemStorage
 type SyncMemStorage struct {
 	syncFile string
 	s        *MemStorage

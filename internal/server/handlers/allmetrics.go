@@ -19,6 +19,15 @@ func NewGetAllMetricsHandler(s storage.Storage) GetAllMetricsHandler {
 	return GetAllMetricsHandler{s: s}
 }
 
+// GetAllMetrics godoc
+// @Tags Get
+// @Summary Запрос получения всех метрик
+// @ID getAllMetrics
+// @Accept  plain
+// @Produce html
+// @Success 200 {string} string ""
+// @Failure 500 {string} string "Внутренняя ошибка"
+// @Router / [get]
 func (h GetAllMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()

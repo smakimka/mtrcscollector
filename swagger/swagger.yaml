@@ -1,0 +1,237 @@
+basePath: /
+definitions:
+  model.MetricData:
+    properties:
+      delta:
+        description: значение метрики в случае передачи counter
+        type: integer
+      id:
+        description: имя метрики
+        type: string
+      type:
+        description: параметр, принимающий значение gauge или counter
+        type: string
+      value:
+        description: значение метрики в случае передачи gauge
+        type: number
+    type: object
+  model.Response:
+    properties:
+      detail:
+        type: string
+      ok:
+        type: boolean
+    type: object
+info:
+  contact: {}
+  description: Серви для сбора метрик.
+  title: mtrcscollector API
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - text/plain
+      operationId: getAllMetrics
+      produces:
+      - text/html
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Запрос получения всех метрик
+      tags:
+      - Get
+  /ping:
+    get:
+      consumes:
+      - text/plain
+      operationId: Ping
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            type: string
+      summary: Запрос для проверки соединения с БД
+      tags:
+      - Status
+  /update/:
+    post:
+      consumes:
+      - application/json
+      operationId: Update
+      parameters:
+      - description: Метрика для обновления
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/model.MetricData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MetricData'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Запрос для обновления метрики
+      tags:
+      - Update
+  /update/{metricKind}/{metricName}/{metricValue}:
+    post:
+      consumes:
+      - text/plain
+      operationId: UpdateOld
+      parameters:
+      - description: Тип метрики для обновления
+        in: path
+        name: metricKind
+        required: true
+        type: string
+      - description: имя метрики
+        in: path
+        name: metricName
+        required: true
+        type: string
+      - description: Значение метрики
+        in: path
+        name: metricValue
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: "20"
+          schema:
+            type: string
+        "400":
+          description: ошибка
+          schema:
+            type: string
+        "500":
+          description: ошибка
+          schema:
+            type: string
+      summary: Запрос для обновления метрики
+      tags:
+      - Update
+  /updates/:
+    post:
+      consumes:
+      - application/json
+      operationId: Updates
+      parameters:
+      - description: Метрики для обновления
+        in: body
+        name: metric
+        required: true
+        schema:
+          items:
+            $ref: '#/definitions/model.MetricData'
+          type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.Response'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Запрос для обновления метрики
+      tags:
+      - Update
+  /value/:
+    get:
+      consumes:
+      - application/json
+      operationId: Value
+      parameters:
+      - description: Метрика для обновления
+        in: body
+        name: metric
+        required: true
+        schema:
+          $ref: '#/definitions/model.MetricData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.MetricData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.Response'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.Response'
+      summary: Запрос для получения метрики
+      tags:
+      - Get
+  /value/{metricKind}/{metricName}:
+    get:
+      consumes:
+      - text/plain
+      operationId: GetMetricValue
+      parameters:
+      - description: Тип метрики для обновления
+        in: path
+        name: metricKind
+        required: true
+        type: string
+      - description: имя метрики
+        in: path
+        name: metricName
+        required: true
+        type: string
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: "20"
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: ошибка
+          schema:
+            type: string
+      summary: Запрос для получения метрики
+      tags:
+      - Get
+swagger: "2.0"
+tags:
+- description: '"Группа запросов получения метрик"'
+  name: Get
+- description: '"Группа запросов обновления метрик"'
+  name: Update
+- description: '"Группа запросов статуса сервиса"'
+  name: Status
