@@ -36,8 +36,8 @@ func parseFlags() *Config {
 
 	flag.StringVar(&serverAddr, "a", "localhost:8080", "server addres without http://")
 
-	flag.IntVar(&flagReportInterval, "r", 1, "metrics sending period (in seconds)")
-	flag.IntVar(&flagPollInteraval, "p", 1, "metrics updqating period (in seconds)")
+	flag.IntVar(&flagReportInterval, "r", 10, "metrics sending period (in seconds)")
+	flag.IntVar(&flagPollInteraval, "p", 2, "metrics updqating period (in seconds)")
 	reportInterval := time.Duration(flagReportInterval) * time.Second
 	pollInteraval := time.Duration(flagPollInteraval) * time.Second
 	flag.StringVar(&flagKey, "k", "", "auth key string")
