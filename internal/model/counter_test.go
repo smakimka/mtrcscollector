@@ -9,8 +9,8 @@ import (
 func TestCounterGetStringValue(t *testing.T) {
 	tests := []struct {
 		name   string
-		metric CounterMetric
 		want   string
+		metric CounterMetric
 	}{
 		{
 			name:   "pozitive number",

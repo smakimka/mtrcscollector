@@ -28,13 +28,13 @@ type getter interface {
 	GetAllCounterMetrics(ctx context.Context) ([]model.CounterMetric, error)
 }
 
-// Основной интерфейс, который реализуют все хранилища
+// Storage Основной интерфейс, который реализуют все хранилища.
 type Storage interface {
 	updater
 	getter
 }
 
-// Интерфейс для хранилищ, которым нужно переодически сохранять данные и потом восстанавливаться из сохранения
+// SyncStorage Интерфейс для хранилищ, которым нужно переодически сохранять данные и потом восстанавливаться из сохранения.
 type SyncStorage interface {
 	Storage
 	Restore(filePath string) error

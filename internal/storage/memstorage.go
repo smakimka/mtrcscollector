@@ -13,11 +13,11 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/model"
 )
 
-// Реализация интерфейса storage для хранения данных в памяти (в 2 хешмапах)
+// MemStorage Реализация интерфейса storage для хранения данных в памяти (в 2 хешмапах).
 type MemStorage struct {
-	mutex          sync.RWMutex
 	gaugeMetrics   map[string]float64
 	counterMetrics map[string]int64
+	mutex          sync.RWMutex
 }
 
 func NewMemStorage() *MemStorage {

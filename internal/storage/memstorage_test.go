@@ -17,10 +17,10 @@ import (
 
 func TestUpdateGaugeMetric(t *testing.T) {
 	tests := []struct {
-		name         string
 		gaugeMetrics map[string]float64
-		newMetric    model.GaugeMetric
 		want         map[string]float64
+		name         string
+		newMetric    model.GaugeMetric
 	}{
 		{
 			name:         "create new metric",
@@ -55,10 +55,10 @@ func TestUpdateGaugeMetric(t *testing.T) {
 
 func TestUpdateCounterMetric(t *testing.T) {
 	tests := []struct {
-		name           string
 		counterMetrics map[string]int64
-		newMetric      model.CounterMetric
 		want           map[string]int64
+		name           string
+		newMetric      model.CounterMetric
 	}{
 		{
 			name:           "create new metric",
@@ -93,13 +93,13 @@ func TestUpdateCounterMetric(t *testing.T) {
 
 func TestGetMetric(t *testing.T) {
 	tests := []struct {
-		name           string
+		wantMetric     interface{}
 		gaugeMetrics   map[string]float64
 		counterMetrics map[string]int64
 		metricKind     string
 		metricName     string
+		name           string
 		wantErr        bool
-		wantMetric     interface{}
 	}{
 		{
 			name:           "get gauge metric",
@@ -234,9 +234,9 @@ func TestSaveLoad(t *testing.T) {
 		counterMetrics map[string]int64
 	}
 	tests := []struct {
-		name string
 		save Data
 		load Data
+		name string
 	}{
 		{
 			name: "load save test #1",
@@ -280,10 +280,10 @@ func TestUpdateMetrics(t *testing.T) {
 		counterMetrics map[string]int64
 	}
 	tests := []struct {
+		want
 		name    string
 		updates model.MetricsData
 		Delta   int64
-		want
 	}{
 		{
 			name: "test counter twice",

@@ -11,7 +11,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/retry"
 )
 
-// Реализация интерфейса storage для БД postgres
+// PGStorage Реализация интерфейса storage для БД postgres.
 type PGStorage struct {
 	p *pgxpool.Pool
 }
@@ -145,7 +145,7 @@ func (s PGStorage) GetAllGaugeMetrics(ctx context.Context) ([]model.GaugeMetric,
 	var metrics []model.GaugeMetric
 	for rows.Next() {
 		var m model.GaugeMetric
-		err := rows.Scan(&m.Name, &m.Value)
+		err = rows.Scan(&m.Name, &m.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -170,7 +170,7 @@ func (s PGStorage) GetAllCounterMetrics(ctx context.Context) ([]model.CounterMet
 	var metrics []model.CounterMetric
 	for rows.Next() {
 		var m model.CounterMetric
-		err := rows.Scan(&m.Name, &m.Value)
+		err = rows.Scan(&m.Name, &m.Value)
 		if err != nil {
 			return nil, err
 		}
@@ -195,12 +195,12 @@ func (s PGStorage) UpdateMetrics(ctx context.Context, metricsData model.MetricsD
 	for _, metricData := range metricsData {
 		switch metricData.Kind {
 		case model.Gauge:
-			err := txUpdateGaugeMetric(ctx, tx, metricData)
+			err = txUpdateGaugeMetric(ctx, tx, metricData)
 			if err != nil {
 				return err
 			}
 		case model.Counter:
-			_, err := txUpdateCounterMetric(ctx, tx, metricData)
+			_, err = txUpdateCounterMetric(ctx, tx, metricData)
 			if err != nil {
 				return err
 			}

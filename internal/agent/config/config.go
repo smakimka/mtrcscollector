@@ -9,18 +9,18 @@ import (
 
 type Config struct {
 	Addr           string
+	Key            string
 	ReportInterval time.Duration
 	PollInterval   time.Duration
 	RateLimit      int
-	Key            string
 }
 
 type EnvParams struct {
 	Addr           string `env:"ADDRESS"`
+	Key            string `env:"KEY"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
 	RateLimit      int    `env:"RATE_LIMIT"`
-	Key            string `env:"KEY"`
 }
 
 func NewConfig() *Config {

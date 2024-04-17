@@ -53,13 +53,13 @@ type testMetricsData []testMetricData
 
 func TestUpdatesHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
+		code        int
 	}
 	tests := []struct {
+		want want
 		name string
 		body testMetricsData
-		want want
 	}{
 		{
 			name: "two different metrics",

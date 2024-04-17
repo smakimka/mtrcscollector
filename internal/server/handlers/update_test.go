@@ -57,8 +57,8 @@ func getTestUpdateRouter() chi.Router {
 
 func TestMetricsUpdateHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
+		code        int
 	}
 	tests := []struct {
 		name string
@@ -138,14 +138,14 @@ type testMetricData struct {
 
 func TestUpdateHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
 		body        string
+		code        int
 	}
 	tests := []struct {
+		want want
 		name string
 		body testMetricData
-		want want
 	}{
 		{
 			name: "positive test #1",
