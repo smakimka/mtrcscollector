@@ -17,7 +17,27 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+	na           = "N/A"
+)
+
 func main() {
+	if buildVersion == "" {
+		buildVersion = na
+	}
+	if buildDate == "" {
+		buildDate = na
+	}
+	if buildCommit == "" {
+		buildCommit = na
+	}
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
+
 	cfg := config.NewConfig()
 	if err := run(cfg); err != nil {
 		panic(err)
