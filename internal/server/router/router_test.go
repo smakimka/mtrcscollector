@@ -117,7 +117,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	s := storage.NewMemStorage()
-	ts := httptest.NewServer(GetRouter(s))
+	ts := httptest.NewServer(GetRouter(s, nil))
 	defer ts.Close()
 
 	for _, test := range tests {

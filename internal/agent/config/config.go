@@ -117,7 +117,7 @@ func parseFlags() *Config {
 	}
 
 	if envParams.CryptoKeyPath == "" {
-		cfg.CryptoKey = flagCryptoKey
+		cfg.CryptoKeyPath = flagCryptoKey
 	}
 
 	return cfg
