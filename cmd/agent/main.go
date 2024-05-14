@@ -49,6 +49,12 @@ func main() {
 	client := resty.New()
 	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
 
+	if cfg.CryptoKeyPath != "" {
+		if err := cfg.ReadCryptoKey(); err != nil {
+			panic(err)
+		}
+	}
+
 	ctx := context.Background()
 	// инициализация метрик
 	m := runtime.MemStats{}
@@ -69,7 +75,7 @@ func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *res
 	errs := make(chan error)
 
 	for i := 0; i < cfg.RateLimit; i++ {
-		go agent.Worker(ctx, client, i+1, jobs, errs)
+		go agent.Worker(ctx, *cfg, client, i+1, jobs, errs)
 	}
 
 	for {

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"crypto/rsa"
 	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
@@ -25,7 +26,7 @@ import (
 // @Tag.name Status
 // @Tag.description "Группа запросов статуса сервиса"
 
-func GetRouter(s storage.Storage) chi.Router {
+func GetRouter(s storage.Storage, key *rsa.PrivateKey) chi.Router {
 	getAllMetricsHandler := handlers.NewGetAllMetricsHandler(s)
 	updateMetricHandler := handlers.NewUpdateMetricHandler(s)
 	getMetricValueHandler := handlers.NewGetMetricValueHandler(s)
@@ -38,6 +39,11 @@ func GetRouter(s storage.Storage) chi.Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Auth)
 	r.Use(middleware.Gzip)
+
+	if key != nil {
+		decryptMiddleware := middleware.NewDecryptMiddleware(key)
+		r.Use(decryptMiddleware.Decrypt)
+	}
 
 	r.Get("/ping", pingHandler.ServeHTTP)
 

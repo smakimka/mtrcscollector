@@ -1,6 +1,10 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
 	"os"
 
@@ -12,12 +16,37 @@ type Config struct {
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
 	Key             string `env:"KEY"`
-	StoreInterval   int    `env:"STORE_INTERVAL"`
-	Restore         bool   `env:"RESTORE"`
+	CryptoKeyPath   string `env:"CRYPTO_KEY"`
+	CryptoKey       *rsa.PrivateKey
+	StoreInterval   int  `env:"STORE_INTERVAL"`
+	Restore         bool `env:"RESTORE"`
 }
 
 func NewConfig() *Config {
 	return parseFlags()
+}
+
+var ErrNokey = errors.New("key file doesn't contain key'")
+
+func (c *Config) ReadCryptoKey() error {
+	data, err := os.ReadFile(c.CryptoKeyPath)
+	if err != nil {
+		return err
+	}
+
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return ErrNokey
+	}
+
+	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+
+	c.CryptoKey = key
+
+	return nil
 }
 
 func parseFlags() *Config {
@@ -27,6 +56,7 @@ func parseFlags() *Config {
 	var flagRestore bool
 	var flagDatabaseDSN string
 	var flagKey string
+	var flagCryptoKey string
 
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "host:port to run on")
 	flag.IntVar(&flagStoreInterval, "i", 300, "state save interval (in seconds)")
@@ -34,6 +64,7 @@ func parseFlags() *Config {
 	flag.BoolVar(&flagRestore, "r", true, "load with saved data or not")
 	flag.StringVar(&flagDatabaseDSN, "d", "", "database dsn string")
 	flag.StringVar(&flagKey, "k", "", "auth key string")
+	flag.StringVar(&flagCryptoKey, "crypto-key", "", "path to a private key file")
 
 	flag.Parse()
 
@@ -65,6 +96,10 @@ func parseFlags() *Config {
 
 	if os.Getenv("KEY") == "" {
 		cfg.Key = flagKey
+	}
+
+	if os.Getenv("CryptoKey") == "" {
+		cfg.CryptoKeyPath = flagCryptoKey
 	}
 
 	return cfg

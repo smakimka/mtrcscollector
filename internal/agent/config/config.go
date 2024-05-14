@@ -1,7 +1,12 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
 	"flag"
+	"os"
 	"time"
 
 	"github.com/caarlos0/env/v10"
@@ -9,6 +14,8 @@ import (
 
 type Config struct {
 	Addr           string
+	CryptoKeyPath  string
+	CryptoKey      *rsa.PublicKey
 	Key            string
 	ReportInterval time.Duration
 	PollInterval   time.Duration
@@ -18,6 +25,7 @@ type Config struct {
 type EnvParams struct {
 	Addr           string `env:"ADDRESS"`
 	Key            string `env:"KEY"`
+	CryptoKeyPath  string `env:"CRYPTO_KEY"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
 	RateLimit      int    `env:"RATE_LIMIT"`
@@ -27,12 +35,36 @@ func NewConfig() *Config {
 	return parseFlags()
 }
 
+var ErrNokey = errors.New("key file doesn't contain key'")
+
+func (c *Config) ReadCryptoKey() error {
+	data, err := os.ReadFile(c.CryptoKeyPath)
+	if err != nil {
+		return err
+	}
+
+	block, _ := pem.Decode(data)
+	if block == nil {
+		return ErrNokey
+	}
+
+	key, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	if err != nil {
+		return err
+	}
+
+	c.CryptoKey = key
+
+	return nil
+}
+
 func parseFlags() *Config {
 	var serverAddr string
 	var flagReportInterval int
 	var flagPollInteraval int
 	var rateLimit int
 	var flagKey string
+	var flagCryptoKey string
 
 	flag.StringVar(&serverAddr, "a", "localhost:8080", "server addres without http://")
 
@@ -41,6 +73,7 @@ func parseFlags() *Config {
 	reportInterval := time.Duration(flagReportInterval) * time.Second
 	pollInteraval := time.Duration(flagPollInteraval) * time.Second
 	flag.StringVar(&flagKey, "k", "", "auth key string")
+	flag.StringVar(&flagCryptoKey, "crypto-key", "", "path to public key file")
 
 	flag.IntVar(&rateLimit, "l", 1, "number of max concurrent request")
 
@@ -81,6 +114,10 @@ func parseFlags() *Config {
 		cfg.Key = flagKey
 	} else {
 		cfg.Key = envParams.Key
+	}
+
+	if envParams.CryptoKeyPath == "" {
+		cfg.CryptoKey = flagCryptoKey
 	}
 
 	return cfg

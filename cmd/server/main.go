@@ -39,6 +39,13 @@ func main() {
 	fmt.Printf("Build commit: %s\n", buildCommit)
 
 	cfg := config.NewConfig()
+
+	if cfg.CryptoKeyPath != "" {
+		if err := cfg.ReadCryptoKey(); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := run(cfg); err != nil {
 		panic(err)
 	}
@@ -75,7 +82,7 @@ func run(cfg *config.Config) error {
 	}
 
 	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
-	return http.ListenAndServe(cfg.Addr, router.GetRouter(s))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey))
 }
 
 func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {
