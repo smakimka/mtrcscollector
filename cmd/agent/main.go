@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"runtime"
 	"time"
 
@@ -77,6 +79,20 @@ func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *res
 	for i := 0; i < cfg.RateLimit; i++ {
 		go agent.Worker(ctx, *cfg, client, i+1, jobs, errs)
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+	go func() {
+		for range c {
+			pollTicker.Stop()
+			reportTicker.Stop()
+
+			fmt.Println("Just a second, sending data...")
+			agent.SendMetrics(context.Background(), cfg, s, jobs, errs)
+			fmt.Println("Done!")
+			os.Exit(0)
+		}
+	}()
 
 	for {
 		select {

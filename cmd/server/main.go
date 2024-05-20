@@ -101,7 +101,7 @@ func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {
 		for range c {
 			fmt.Println("Just a second, saving data...")
