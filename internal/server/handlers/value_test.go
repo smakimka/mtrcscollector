@@ -60,9 +60,9 @@ func getTestValueRouter() chi.Router {
 
 func TestGetMetricsHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
 		body        string
+		code        int
 	}
 	tests := []struct {
 		name string
@@ -106,14 +106,14 @@ func TestGetMetricsHandler(t *testing.T) {
 
 func TestValueHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
 		body        string
+		code        int
 	}
 	tests := []struct {
+		want want
 		name string
 		body testMetricData
-		want want
 	}{
 		{
 			name: "positive test #1",
@@ -121,7 +121,7 @@ func TestValueHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
-				body:        "{\"id\":\"test\",\"type\":\"gauge\",\"value\":1.5}\n",
+				body:        "{\"value\":1.5,\"id\":\"test\",\"type\":\"gauge\"}\n",
 			},
 		},
 		{
@@ -130,7 +130,7 @@ func TestValueHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusNotFound,
 				contentType: "application/json",
-				body:        "{\"ok\":false,\"detail\":\"no such metric\"}\n",
+				body:        "{\"detail\":\"no such metric\",\"ok\":false}\n",
 			},
 		},
 	}

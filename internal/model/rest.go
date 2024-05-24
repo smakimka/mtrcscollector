@@ -9,10 +9,10 @@ var ErrMissingFields = errors.New("missing some of required fields")
 var ErrWrongMetricKind = errors.New("wrong metric kind")
 
 type MetricData struct {
-	Name  string   `json:"id"`              // имя метрики
-	Kind  string   `json:"type"`            // параметр, принимающий значение gauge или counter
-	Delta *int64   `json:"delta,omitempty"` // значение метрики в случае передачи counter
-	Value *float64 `json:"value,omitempty"` // значение метрики в случае передачи gauge
+	Delta *int64   `json:"delta,omitempty"`
+	Value *float64 `json:"value,omitempty"`
+	Name  string   `json:"id"`
+	Kind  string   `json:"type"`
 }
 
 func (m *MetricData) Bind(r *http.Request) error {
@@ -40,6 +40,6 @@ func (d MetricsData) Bind(r *http.Request) error {
 }
 
 type Response struct {
-	Ok     bool   `json:"ok"`
 	Detail string `json:"detail,omitempty"`
+	Ok     bool   `json:"ok"`
 }

@@ -9,8 +9,8 @@ import (
 func TestGaugeGetStringValue(t *testing.T) {
 	tests := []struct {
 		name   string
-		metric GaugeMetric
 		want   string
+		metric GaugeMetric
 	}{
 		{
 			name:   "pozitive number",

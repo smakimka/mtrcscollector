@@ -3,7 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"github.com/go-resty/resty/v2"
@@ -16,7 +19,27 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+	na           = "N/A"
+)
+
 func main() {
+	if buildVersion == "" {
+		buildVersion = na
+	}
+	if buildDate == "" {
+		buildDate = na
+	}
+	if buildCommit == "" {
+		buildCommit = na
+	}
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
+
 	cfg := config.NewConfig()
 	logger.SetLevel(logger.Info)
 
@@ -28,6 +51,12 @@ func main() {
 
 	client := resty.New()
 	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
+
+	if cfg.CryptoKeyPath != "" {
+		if err := cfg.ReadCryptoKey(); err != nil {
+			panic(err)
+		}
+	}
 
 	ctx := context.Background()
 	// инициализация метрик
@@ -49,8 +78,22 @@ func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *res
 	errs := make(chan error)
 
 	for i := 0; i < cfg.RateLimit; i++ {
-		go agent.Worker(ctx, client, i+1, jobs, errs)
+		go agent.Worker(ctx, *cfg, client, i+1, jobs, errs)
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	go func() {
+		for range c {
+			pollTicker.Stop()
+			reportTicker.Stop()
+
+			fmt.Println("Just a second, sending data...")
+			agent.SendMetrics(context.Background(), cfg, s, jobs, errs)
+			fmt.Println("Done!")
+			os.Exit(0)
+		}
+	}()
 
 	for {
 		select {

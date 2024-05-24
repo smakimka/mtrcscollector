@@ -57,8 +57,8 @@ func getTestUpdateRouter() chi.Router {
 
 func TestMetricsUpdateHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
+		code        int
 	}
 	tests := []struct {
 		name string
@@ -138,14 +138,14 @@ type testMetricData struct {
 
 func TestUpdateHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
 		body        string
+		code        int
 	}
 	tests := []struct {
+		want want
 		name string
 		body testMetricData
-		want want
 	}{
 		{
 			name: "positive test #1",
@@ -153,7 +153,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
-				body:        "{\"id\":\"test\",\"type\":\"gauge\",\"value\":1.1}\n",
+				body:        "{\"value\":1.1,\"id\":\"test\",\"type\":\"gauge\"}\n",
 			},
 		},
 		{
@@ -162,7 +162,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				contentType: "application/json",
-				body:        "{\"id\":\"test\",\"type\":\"counter\",\"delta\":1}\n",
+				body:        "{\"delta\":1,\"id\":\"test\",\"type\":\"counter\"}\n",
 			},
 		},
 		{
@@ -171,7 +171,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
-				body:        "{\"ok\":false,\"detail\":\"wrong metric kind\"}\n",
+				body:        "{\"detail\":\"wrong metric kind\",\"ok\":false}\n",
 			},
 		},
 		{
@@ -180,7 +180,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
-				body:        "{\"ok\":false,\"detail\":\"missing some of required fields\"}\n",
+				body:        "{\"detail\":\"missing some of required fields\",\"ok\":false}\n",
 			},
 		},
 		{
@@ -189,7 +189,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
-				body:        "{\"ok\":false,\"detail\":\"missing some of required fields\"}\n",
+				body:        "{\"detail\":\"missing some of required fields\",\"ok\":false}\n",
 			},
 		},
 		{
@@ -198,7 +198,7 @@ func TestUpdateHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "application/json",
-				body:        "{\"ok\":false,\"detail\":\"missing some of required fields\"}\n",
+				body:        "{\"detail\":\"missing some of required fields\",\"ok\":false}\n",
 			},
 		},
 	}

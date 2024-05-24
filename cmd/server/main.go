@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,8 +18,35 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
+var (
+	buildVersion string
+	buildDate    string
+	buildCommit  string
+	na           = "N/A"
+)
+
 func main() {
+	if buildVersion == "" {
+		buildVersion = na
+	}
+	if buildDate == "" {
+		buildDate = na
+	}
+	if buildCommit == "" {
+		buildCommit = na
+	}
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
+
 	cfg := config.NewConfig()
+
+	if cfg.CryptoKeyPath != "" {
+		if err := cfg.ReadCryptoKey(); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := run(cfg); err != nil {
 		panic(err)
 	}
@@ -55,7 +83,7 @@ func run(cfg *config.Config) error {
 	}
 
 	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
-	return http.ListenAndServe(cfg.Addr, router.GetRouter(s))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey))
 }
 
 func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {
@@ -74,7 +102,7 @@ func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {
 	}
 
 	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	go func() {
 		for range c {
 			fmt.Println("Just a second, saving data...")

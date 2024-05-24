@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -18,11 +20,11 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
 
-func Worker(ctx context.Context, client *resty.Client, id int, jobs <-chan model.MetricsData, errs chan<- error) {
+func Worker(ctx context.Context, cfg config.Config, client *resty.Client, id int, jobs <-chan model.MetricsData, errs chan<- error) {
 	for metricsData := range jobs {
 		logger.Log.Debug().Msg(fmt.Sprintf("worker %d started work", id))
 
-		err := sendRequest(ctx, metricsData, client)
+		err := sendRequest(ctx, &cfg, metricsData, client)
 		if err != nil {
 			errs <- err
 		}
@@ -103,10 +105,18 @@ func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMet
 	}, nil
 }
 
-func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Client) error {
+func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData, client *resty.Client) error {
 	body, err := json.Marshal(data)
 	if err != nil {
 		return err
+	}
+
+	if cfg.CryptoKey != nil {
+		encBody, err := rsa.EncryptPKCS1v15(rand.Reader, cfg.CryptoKey, body)
+		if err != nil {
+			return err
+		}
+		body = encBody
 	}
 
 	zipBody := bytes.NewBuffer([]byte{})
@@ -118,6 +128,10 @@ func sendRequest(ctx context.Context, data model.MetricsData, client *resty.Clie
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
 		SetHeader("Accept-Encoding", "gzip")
+
+	if cfg.CryptoKey != nil {
+		req.SetHeader("Encryption", "crypto-key")
+	}
 
 	if auth.Enabled() {
 		sign := auth.Sign(zipBody.Bytes())

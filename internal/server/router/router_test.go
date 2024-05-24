@@ -24,8 +24,8 @@ func testRequest(t *testing.T, ts *httptest.Server, url, method string) *http.Re
 
 func TestRouter(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
+		code        int
 	}
 	tests := []struct {
 		name   string
@@ -117,7 +117,7 @@ func TestRouter(t *testing.T) {
 	}
 
 	s := storage.NewMemStorage()
-	ts := httptest.NewServer(GetRouter(s))
+	ts := httptest.NewServer(GetRouter(s, nil))
 	defer ts.Close()
 
 	for _, test := range tests {

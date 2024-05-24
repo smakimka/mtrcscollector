@@ -8,14 +8,14 @@ import (
 )
 
 type (
-	responseData struct {
+	responseDataStruct struct {
 		status int
 		size   int
 	}
 
 	loggingResponseWriter struct {
 		http.ResponseWriter
-		responseData *responseData
+		responseData *responseDataStruct
 	}
 )
 
@@ -37,7 +37,7 @@ func Logger(next http.Handler) http.Handler {
 		url := r.RequestURI
 		method := r.Method
 
-		responseData := responseData{}
+		responseData := responseDataStruct{}
 		lw := loggingResponseWriter{w, &responseData}
 		next.ServeHTTP(&lw, r)
 
