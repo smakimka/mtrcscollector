@@ -47,6 +47,12 @@ func main() {
 		}
 	}
 
+	if cfg.TrustedSubnetString != "" {
+		if err := cfg.ParseCIDR(); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := run(cfg); err != nil {
 		panic(err)
 	}
@@ -83,7 +89,7 @@ func run(cfg *config.Config) error {
 	}
 
 	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
-	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey, cfg.TrustedSubnet))
 }
 
 func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {

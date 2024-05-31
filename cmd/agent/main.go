@@ -58,6 +58,10 @@ func main() {
 		}
 	}
 
+	if err := cfg.SetMyIP(); err != nil {
+		panic(err)
+	}
+
 	ctx := context.Background()
 	// инициализация метрик
 	m := runtime.MemStats{}

@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"flag"
+	"net"
 	"os"
 	"time"
 
@@ -21,6 +22,7 @@ type Config struct {
 	ReportInterval time.Duration
 	PollInterval   time.Duration
 	RateLimit      int
+	MyIP           string
 }
 
 type JsonConfig struct {
@@ -66,6 +68,22 @@ func (c *Config) ReadCryptoKey() error {
 
 	c.CryptoKey = key
 
+	return nil
+}
+
+func (c *Config) SetMyIP() error {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return err
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				c.MyIP = ipnet.IP.String()
+				return nil
+			}
+		}
+	}
 	return nil
 }
 

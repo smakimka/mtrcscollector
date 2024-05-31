@@ -7,20 +7,23 @@ import (
 	"encoding/pem"
 	"errors"
 	"flag"
+	"net"
 	"os"
 
 	"github.com/caarlos0/env/v10"
 )
 
 type Config struct {
-	Addr            string `env:"ADDRESS" json:"addr"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
-	DatabaseDSN     string `env:"DATABASE_DSN" json:"database_dsn"`
-	Key             string `env:"KEY" json:"key"`
-	CryptoKeyPath   string `env:"CRYPTO_KEY" json:"crypto_key"`
-	CryptoKey       *rsa.PrivateKey
-	StoreInterval   int  `env:"STORE_INTERVAL" json:"store_interval"`
-	Restore         bool `env:"RESTORE" json:"restore"`
+	Addr                string `env:"ADDRESS" json:"addr"`
+	FileStoragePath     string `env:"FILE_STORAGE_PATH" json:"file_storage_path"`
+	DatabaseDSN         string `env:"DATABASE_DSN" json:"database_dsn"`
+	Key                 string `env:"KEY" json:"key"`
+	CryptoKeyPath       string `env:"CRYPTO_KEY" json:"crypto_key"`
+	CryptoKey           *rsa.PrivateKey
+	StoreInterval       int    `env:"STORE_INTERVAL" json:"store_interval"`
+	Restore             bool   `env:"RESTORE" json:"restore"`
+	TrustedSubnetString string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
+	TrustedSubnet       *net.IPNet
 }
 
 func NewConfig() *Config {
@@ -50,6 +53,18 @@ func (c *Config) ReadCryptoKey() error {
 	return nil
 }
 
+func (c *Config) ParseCIDR() error {
+	_, ipNet, err := net.ParseCIDR(c.TrustedSubnetString)
+
+	if err != nil {
+		return err
+	}
+
+	c.TrustedSubnet = ipNet
+
+	return nil
+}
+
 func parseFlags() *Config {
 	var flagRunAddr string
 	var flagStoreInterval int
@@ -59,6 +74,7 @@ func parseFlags() *Config {
 	var flagKey string
 	var flagCryptoKey string
 	var flagJsonConfig string
+	var flagTrustedSubnet string
 
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "host:port to run on")
 	flag.IntVar(&flagStoreInterval, "i", 300, "state save interval (in seconds)")
@@ -68,6 +84,7 @@ func parseFlags() *Config {
 	flag.StringVar(&flagKey, "k", "", "auth key string")
 	flag.StringVar(&flagCryptoKey, "crypto-key", "", "path to a private key file")
 	flag.StringVar(&flagJsonConfig, "c", "{}", "config in json format")
+	flag.StringVar(&flagTrustedSubnet, "t", "", "trusted subnet (CIDR)")
 
 	flag.Parse()
 
@@ -155,7 +172,7 @@ func parseFlags() *Config {
 		}
 	}
 
-	if os.Getenv("CryptoKey") == "" {
+	if os.Getenv("CRYPTO_KEY") == "" {
 		if flagCryptoKey != "" {
 			cfg.CryptoKeyPath = flagCryptoKey
 		} else {
@@ -163,6 +180,18 @@ func parseFlags() *Config {
 				cfg.CryptoKeyPath = jsonCfg.CryptoKeyPath
 			} else {
 				cfg.CryptoKeyPath = flagCryptoKey
+			}
+		}
+	}
+
+	if os.Getenv("TRUSTED_SUBNET") == "" {
+		if flagTrustedSubnet != "" {
+			cfg.TrustedSubnetString = flagTrustedSubnet
+		} else {
+			if jsonCfg.TrustedSubnetString != "" {
+				cfg.TrustedSubnetString = jsonCfg.TrustedSubnetString
+			} else {
+				cfg.TrustedSubnetString = flagTrustedSubnet
 			}
 		}
 	}

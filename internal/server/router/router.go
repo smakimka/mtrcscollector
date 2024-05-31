@@ -2,6 +2,7 @@ package router
 
 import (
 	"crypto/rsa"
+	"net"
 	"net/http/pprof"
 
 	"github.com/go-chi/chi/v5"
@@ -26,7 +27,7 @@ import (
 // @Tag.name Status
 // @Tag.description "Группа запросов статуса сервиса"
 
-func GetRouter(s storage.Storage, key *rsa.PrivateKey) chi.Router {
+func GetRouter(s storage.Storage, key *rsa.PrivateKey, trustedSubnet *net.IPNet) chi.Router {
 	getAllMetricsHandler := handlers.NewGetAllMetricsHandler(s)
 	updateMetricHandler := handlers.NewUpdateMetricHandler(s)
 	getMetricValueHandler := handlers.NewGetMetricValueHandler(s)
@@ -37,6 +38,12 @@ func GetRouter(s storage.Storage, key *rsa.PrivateKey) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
+
+	if trustedSubnet != nil {
+		subnetMiddleware := middleware.NewSubnetMiddleware(trustedSubnet)
+		r.Use(subnetMiddleware.AllowTrusted)
+	}
+
 	r.Use(middleware.Auth)
 	r.Use(middleware.Gzip)
 

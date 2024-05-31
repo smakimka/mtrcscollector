@@ -127,7 +127,8 @@ func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
-		SetHeader("Accept-Encoding", "gzip")
+		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("X-Real-IP", cfg.MyIP)
 
 	if cfg.CryptoKey != nil {
 		req.SetHeader("Encryption", "crypto-key")
