@@ -24,6 +24,7 @@ type Config struct {
 	Restore             bool   `env:"RESTORE" json:"restore"`
 	TrustedSubnetString string `env:"TRUSTED_SUBNET" json:"trusted_subnet"`
 	TrustedSubnet       *net.IPNet
+	StartAsGRPC         bool `env:"GPRC" json:"grpc"`
 }
 
 func NewConfig() *Config {
@@ -75,6 +76,7 @@ func parseFlags() *Config {
 	var flagCryptoKey string
 	var flagJsonConfig string
 	var flagTrustedSubnet string
+	var flagGRPC bool
 
 	flag.StringVar(&flagRunAddr, "a", "localhost:8080", "host:port to run on")
 	flag.IntVar(&flagStoreInterval, "i", 300, "state save interval (in seconds)")
@@ -85,6 +87,7 @@ func parseFlags() *Config {
 	flag.StringVar(&flagCryptoKey, "crypto-key", "", "path to a private key file")
 	flag.StringVar(&flagJsonConfig, "c", "{}", "config in json format")
 	flag.StringVar(&flagTrustedSubnet, "t", "", "trusted subnet (CIDR)")
+	flag.BoolVar(&flagGRPC, "g", false, "start as grpc or not")
 
 	flag.Parse()
 
@@ -196,5 +199,16 @@ func parseFlags() *Config {
 		}
 	}
 
+	if os.Getenv("GRPC") == "" {
+		if !flagGRPC {
+			cfg.StartAsGRPC = flagGRPC
+		} else {
+			if jsonCfg.StartAsGRPC {
+				cfg.StartAsGRPC = jsonCfg.StartAsGRPC
+			} else {
+				cfg.StartAsGRPC = flagGRPC
+			}
+		}
+	}
 	return cfg
 }

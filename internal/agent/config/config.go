@@ -23,6 +23,7 @@ type Config struct {
 	PollInterval   time.Duration
 	RateLimit      int
 	MyIP           string
+	GRPC           bool
 }
 
 type JsonConfig struct {
@@ -32,6 +33,7 @@ type JsonConfig struct {
 	ReportInterval int    `json:"report_interval"`
 	PollInterval   int    `json:"poll_interval"`
 	RateLimit      int    `json:"rate_limit"`
+	GRPC           string `json:"grpc"`
 }
 
 type EnvParams struct {
@@ -42,6 +44,7 @@ type EnvParams struct {
 	ReportInterval int    `env:"REPORT_INTERVAL"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
 	RateLimit      int    `env:"RATE_LIMIT"`
+	GRPC           string `env:"GRPC"`
 }
 
 func NewConfig() *Config {
@@ -92,6 +95,8 @@ func parseFlags() *Config {
 	var flagReportInterval int
 	var flagPollInteraval int
 	var rateLimit int
+	var flagGRPC bool
+
 	var flagKey string
 	var flagCryptoKey string
 
@@ -110,6 +115,7 @@ func parseFlags() *Config {
 
 	flag.IntVar(&rateLimit, "l", 1, "number of max concurrent request")
 
+	flag.BoolVar(&flagGRPC, "g", false, "grpc or not")
 	flag.Parse()
 
 	var jsonCfg JsonConfig
@@ -196,6 +202,17 @@ func parseFlags() *Config {
 			}
 		}
 		cfg.CryptoKeyPath = flagCryptoKey
+	}
+
+	if envParams.GRPC == "" {
+		if !flagGRPC {
+			cfg.GRPC = flagGRPC
+		} else {
+			if !cfg.GRPC {
+				cfg.GRPC = flagGRPC
+			}
+		}
+		cfg.GRPC = flagGRPC
 	}
 
 	return cfg

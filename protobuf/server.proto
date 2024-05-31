@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option go_package = "/server";
+
+
+message Metric {
+    int64 delta = 1;
+    double value = 2;
+    string name = 3;
+    string kind = 4;
+}
+
+message UpdateMetrics {
+    repeated Metric metrics = 1;
+}
+
+message Response {
+    string detail = 1;
+    bool ok = 2;
+}
+
+service MetricsCollector {
+    rpc Update(UpdateMetrics) returns (Response);
+}

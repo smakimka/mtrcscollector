@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-resty/resty/v2"
+	"google.golang.org/grpc"
 
 	"github.com/smakimka/mtrcscollector/internal/agent"
 	"github.com/smakimka/mtrcscollector/internal/agent/config"
@@ -17,6 +18,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
+	pb "github.com/smakimka/mtrcscollector/protobuf/server"
 )
 
 var (
@@ -49,8 +51,20 @@ func main() {
 
 	s := storage.NewMemStorage()
 
-	client := resty.New()
-	client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
+	var client *resty.Client
+	var grpcClient pb.MetricsCollectorClient
+	if cfg.GRPC {
+		conn, err := grpc.NewClient(cfg.Addr)
+		if err != nil {
+			panic(err)
+		}
+		defer conn.Close()
+
+		grpcClient = pb.NewMetricsCollectorClient(conn)
+	} else {
+		client = resty.New()
+		client.SetBaseURL(fmt.Sprintf("http://%s", cfg.Addr))
+	}
 
 	if cfg.CryptoKeyPath != "" {
 		if err := cfg.ReadCryptoKey(); err != nil {
@@ -69,10 +83,10 @@ func main() {
 	agent.UpdateMetrics(ctx, &m, s)
 	s.UpdateGaugeMetric(ctx, model.GaugeMetric{Name: "LastPollCount", Value: 0})
 
-	run(ctx, cfg, s, client)
+	run(ctx, cfg, s, client, grpcClient)
 }
 
-func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client) {
+func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *resty.Client, grpcClient pb.MetricsCollectorClient) {
 	pollTicker := time.NewTicker(cfg.PollInterval)
 	defer pollTicker.Stop()
 	reportTicker := time.NewTicker(cfg.ReportInterval)
@@ -82,7 +96,11 @@ func run(ctx context.Context, cfg *config.Config, s storage.Storage, client *res
 	errs := make(chan error)
 
 	for i := 0; i < cfg.RateLimit; i++ {
-		go agent.Worker(ctx, *cfg, client, i+1, jobs, errs)
+		if client == nil {
+			go agent.GRPCWorker(ctx, *cfg, grpcClient, i+1, jobs, errs)
+		} else {
+			go agent.Worker(ctx, *cfg, client, i+1, jobs, errs)
+		}
 	}
 
 	c := make(chan os.Signal, 1)
