@@ -26,7 +26,7 @@ type Config struct {
 	GRPC           bool
 }
 
-type JsonConfig struct {
+type JSONConfig struct {
 	Addr           string `json:"addr"`
 	CryptoKey      string `json:"crypto_key"`
 	Key            string `json:"key"`
@@ -96,29 +96,23 @@ func parseFlags() *Config {
 	var flagPollInteraval int
 	var rateLimit int
 	var flagGRPC bool
-
 	var flagKey string
 	var flagCryptoKey string
-
 	var flagConfig string
 
 	flag.StringVar(&flagConfig, "c", "{}", "config in json format")
-
 	flag.StringVar(&serverAddr, "a", "localhost:8080", "server addres without http://")
-
 	flag.IntVar(&flagReportInterval, "r", 10, "metrics sending period (in seconds)")
 	flag.IntVar(&flagPollInteraval, "p", 2, "metrics updqating period (in seconds)")
 	reportInterval := time.Duration(flagReportInterval) * time.Second
 	pollInteraval := time.Duration(flagPollInteraval) * time.Second
 	flag.StringVar(&flagKey, "k", "", "auth key string")
 	flag.StringVar(&flagCryptoKey, "crypto-key", "", "path to public key file")
-
 	flag.IntVar(&rateLimit, "l", 1, "number of max concurrent request")
-
 	flag.BoolVar(&flagGRPC, "g", false, "grpc or not")
 	flag.Parse()
 
-	var jsonCfg JsonConfig
+	var jsonCfg JSONConfig
 	err := json.Unmarshal([]byte(flagConfig), &jsonCfg)
 	if err != nil {
 		panic(err)
@@ -131,7 +125,7 @@ func parseFlags() *Config {
 		panic(err)
 	}
 
-	readJson(cfg, &jsonCfg)
+	readJSON(cfg, &jsonCfg)
 
 	if envParams.Addr == "" {
 		if serverAddr != "localhost:8080" {
@@ -207,10 +201,8 @@ func parseFlags() *Config {
 	if envParams.GRPC == "" {
 		if !flagGRPC {
 			cfg.GRPC = flagGRPC
-		} else {
-			if !cfg.GRPC {
-				cfg.GRPC = flagGRPC
-			}
+		} else if !cfg.GRPC {
+			cfg.GRPC = flagGRPC
 		}
 		cfg.GRPC = flagGRPC
 	}
@@ -218,7 +210,7 @@ func parseFlags() *Config {
 	return cfg
 }
 
-func readJson(cfg *Config, jsonCfg *JsonConfig) {
+func readJSON(cfg *Config, jsonCfg *JSONConfig) {
 	if jsonCfg.Addr != "" {
 		cfg.Addr = jsonCfg.Addr
 	}
