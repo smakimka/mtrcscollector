@@ -130,10 +130,8 @@ func parseFlags() *Config {
 	if envParams.Addr == "" {
 		if serverAddr != "localhost:8080" {
 			cfg.Addr = serverAddr
-		} else {
-			if cfg.Addr == "" {
-				cfg.Addr = serverAddr
-			}
+		} else if cfg.Addr == "" {
+			cfg.Addr = serverAddr
 		}
 	} else {
 		cfg.Addr = envParams.Addr
@@ -142,10 +140,8 @@ func parseFlags() *Config {
 	if envParams.PollInterval == 0 {
 		if flagPollInteraval != 2 {
 			cfg.PollInterval = pollInteraval
-		} else {
-			if cfg.PollInterval == 0 {
-				cfg.PollInterval = pollInteraval
-			}
+		} else if cfg.PollInterval == 0 {
+			cfg.PollInterval = pollInteraval
 		}
 	} else {
 		cfg.PollInterval = time.Duration(envParams.PollInterval) * time.Second
@@ -154,10 +150,8 @@ func parseFlags() *Config {
 	if envParams.ReportInterval == 0 {
 		if flagReportInterval != 10 {
 			cfg.ReportInterval = reportInterval
-		} else {
-			if cfg.ReportInterval == 0 {
-				cfg.ReportInterval = reportInterval
-			}
+		} else if cfg.ReportInterval == 0 {
+			cfg.ReportInterval = reportInterval
 		}
 	} else {
 		cfg.ReportInterval = time.Duration(envParams.ReportInterval) * time.Second
@@ -166,10 +160,8 @@ func parseFlags() *Config {
 	if envParams.RateLimit == 0 {
 		if rateLimit != 1 {
 			cfg.RateLimit = rateLimit
-		} else {
-			if cfg.RateLimit == 0 {
-				cfg.RateLimit = rateLimit
-			}
+		} else if cfg.RateLimit == 0 {
+			cfg.RateLimit = rateLimit
 		}
 	} else {
 		cfg.RateLimit = envParams.RateLimit
@@ -178,10 +170,8 @@ func parseFlags() *Config {
 	if envParams.Key == "" {
 		if flagKey != "" {
 			cfg.Key = flagKey
-		} else {
-			if cfg.Key == "" {
-				cfg.Key = flagKey
-			}
+		} else if cfg.Key == "" {
+			cfg.Key = flagKey
 		}
 	} else {
 		cfg.Key = envParams.Key
@@ -190,10 +180,8 @@ func parseFlags() *Config {
 	if envParams.CryptoKeyPath == "" {
 		if flagCryptoKey != "" {
 			cfg.CryptoKeyPath = flagCryptoKey
-		} else {
-			if cfg.CryptoKeyPath == "" {
-				cfg.CryptoKeyPath = flagCryptoKey
-			}
+		} else if cfg.CryptoKeyPath == "" {
+			cfg.CryptoKeyPath = flagCryptoKey
 		}
 		cfg.CryptoKeyPath = flagCryptoKey
 	}

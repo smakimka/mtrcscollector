@@ -46,7 +46,7 @@ func GRPCWorker(ctx context.Context, cfg config.Config, client pb.MetricsCollect
 	}
 }
 
-func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, jobs chan<- model.MetricsData, errs chan<- error) {
+func SendMetrics(ctx context.Context, _ *config.Config, s storage.Storage, jobs chan<- model.MetricsData, errs chan<- error) {
 	gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 	if err != nil {
 		errs <- err
@@ -119,7 +119,7 @@ func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMet
 	}, nil
 }
 
-func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData, client *resty.Client) error {
+func sendRequest(_ context.Context, cfg *config.Config, data model.MetricsData, client *resty.Client) error {
 	body, err := json.Marshal(data)
 	if err != nil {
 		return err
