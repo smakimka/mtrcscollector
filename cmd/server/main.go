@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,6 +15,7 @@ import (
 	"github.com/smakimka/mtrcscollector/internal/auth"
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/server/config"
+	"github.com/smakimka/mtrcscollector/internal/server/grpc"
 	"github.com/smakimka/mtrcscollector/internal/server/router"
 	"github.com/smakimka/mtrcscollector/internal/storage"
 )
@@ -43,6 +45,12 @@ func main() {
 
 	if cfg.CryptoKeyPath != "" {
 		if err := cfg.ReadCryptoKey(); err != nil {
+			panic(err)
+		}
+	}
+
+	if cfg.TrustedSubnetString != "" {
+		if err := cfg.ParseCIDR(); err != nil {
 			panic(err)
 		}
 	}
@@ -82,8 +90,21 @@ func run(cfg *config.Config) error {
 		auth.Init(cfg.Key)
 	}
 
+	if cfg.StartAsGRPC {
+		listen, err := net.Listen("tcp", cfg.Addr)
+		if err != nil {
+			return err
+		}
+
+		logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
+		server := grpc.NewServer(cfg, s)
+		if err := server.Serve(listen); err != nil {
+			return err
+		}
+	}
+
 	logger.Log.Info().Msg(fmt.Sprintf("Running server on %s", cfg.Addr))
-	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey))
+	return http.ListenAndServe(cfg.Addr, router.GetRouter(s, cfg.CryptoKey, cfg.TrustedSubnet))
 }
 
 func initSyncStorage(cfg *config.Config) (storage.SyncStorage, error) {

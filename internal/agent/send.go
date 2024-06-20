@@ -12,12 +12,14 @@ import (
 	"net/http"
 
 	"github.com/go-resty/resty/v2"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/smakimka/mtrcscollector/internal/agent/config"
 	"github.com/smakimka/mtrcscollector/internal/auth"
 	"github.com/smakimka/mtrcscollector/internal/logger"
 	"github.com/smakimka/mtrcscollector/internal/model"
 	"github.com/smakimka/mtrcscollector/internal/storage"
+	pb "github.com/smakimka/mtrcscollector/protobuf/server"
 )
 
 func Worker(ctx context.Context, cfg config.Config, client *resty.Client, id int, jobs <-chan model.MetricsData, errs chan<- error) {
@@ -32,7 +34,19 @@ func Worker(ctx context.Context, cfg config.Config, client *resty.Client, id int
 	}
 }
 
-func SendMetrics(ctx context.Context, cfg *config.Config, s storage.Storage, jobs chan<- model.MetricsData, errs chan<- error) {
+func GRPCWorker(ctx context.Context, cfg config.Config, client pb.MetricsCollectorClient, id int, jobs <-chan model.MetricsData, errs chan<- error) {
+	for metricsData := range jobs {
+		logger.Log.Debug().Msg(fmt.Sprintf("worker %d started work", id))
+
+		err := sendGRPCRequest(ctx, &cfg, metricsData, client)
+		if err != nil {
+			errs <- err
+		}
+		logger.Log.Debug().Msg(fmt.Sprintf("worker %d finished work", id))
+	}
+}
+
+func SendMetrics(ctx context.Context, _ *config.Config, s storage.Storage, jobs chan<- model.MetricsData, errs chan<- error) {
 	gaugeMetrics, err := s.GetAllGaugeMetrics(ctx)
 	if err != nil {
 		errs <- err
@@ -105,7 +119,7 @@ func getPollCountData(ctx context.Context, s storage.Storage, m model.CounterMet
 	}, nil
 }
 
-func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData, client *resty.Client) error {
+func sendRequest(_ context.Context, cfg *config.Config, data model.MetricsData, client *resty.Client) error {
 	body, err := json.Marshal(data)
 	if err != nil {
 		return err
@@ -127,7 +141,8 @@ func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData
 	req := client.R().
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Content-Encoding", "gzip").
-		SetHeader("Accept-Encoding", "gzip")
+		SetHeader("Accept-Encoding", "gzip").
+		SetHeader("X-Real-IP", cfg.MyIP)
 
 	if cfg.CryptoKey != nil {
 		req.SetHeader("Encryption", "crypto-key")
@@ -152,4 +167,31 @@ func sendRequest(ctx context.Context, cfg *config.Config, data model.MetricsData
 	}
 
 	return nil
+}
+
+func sendGRPCRequest(ctx context.Context, cfg *config.Config, data model.MetricsData, client pb.MetricsCollectorClient) error {
+	in := &pb.UpdateMetrics{Metrics: []*pb.Metric{}}
+	for _, metric := range data {
+		in.Metrics = append(in.Metrics, &pb.Metric{
+			Delta: *metric.Delta,
+			Value: *metric.Value,
+			Name:  metric.Name,
+			Kind:  metric.Kind,
+		})
+	}
+
+	md := metadata.New(map[string]string{"X-Real-IP": cfg.MyIP})
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	resp, err := client.Update(ctx, in)
+	if err != nil {
+		return err
+	}
+
+	if !resp.Ok {
+		logger.Log.Warn().Msg(fmt.Sprintf("got error (%s)", resp.Detail))
+	}
+
+	return nil
+
 }
